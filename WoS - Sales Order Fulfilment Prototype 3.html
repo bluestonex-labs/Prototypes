@@ -1,0 +1,2593 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Watches of Switzerland · Sales Order Fulfilment</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%230A0A09'/%3E%3Ccircle cx='16' cy='16' r='9' fill='none' stroke='%23C9A227' stroke-width='2'/%3E%3Cpath d='M16 10v6l4 3' fill='none' stroke='%23C9A227' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700;9..144,800&family=Jost:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    /* ---- Watches of Switzerland brand palette ---- */
+    --gold:#A9812E;         /* brass / hallmark gold */
+    --gold-deep:#7C5E20;    /* deeper gold for gradients / hover */
+    --gold-glow:rgba(169,129,46,.16);
+    --gold-soft:#F3ECDA;
+    --ink:#1B1912;          /* warm near-black for headings */
+    --ink-2:#2A2720;
+    --frost:#F6F3EC;        /* warm ivory page bg */
+    --frost-2:#EDE8DC;
+    --surface:#FFFFFF;
+    --brand-gradient:linear-gradient(135deg,#D8B24A,#8A6A22);
+    --dark:#0B0A08;         /* true near-black sidebar */
+    --signal:#96332C;       /* alert / declined — muted brick */
+    --signal-soft:#F5E7E4;
+    --mint:#3F6B4F;         /* accepted / cleared — deep bottle green */
+    --mint-soft:#E7EFE9;
+    --line:#E6E0D3;
+    --line-soft:#F0EBE0;
+    --txt:#1B1912;
+    --txt-2:#6B6355;
+    --txt-3:#A79C88;
+    --radius:16px;
+    --radius-s:11px;
+    --shadow:0 1px 2px rgba(27,25,18,.05),0 8px 28px rgba(27,25,18,.09);
+    --shadow-lg:0 24px 60px rgba(27,25,18,.24);
+    --sans:'Jost',-apple-system,BlinkMacSystemFont,sans-serif;
+    --disp:'Fraunces',var(--sans);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    font-family:var(--sans);background:var(--frost);color:var(--txt);
+    -webkit-font-smoothing:antialiased;font-size:14px;line-height:1.45;
+    overflow:hidden;
+  }
+  ::selection{background:var(--gold-glow)}
+  button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+  .tnum{font-variant-numeric:tabular-nums}
+
+  /* ---------- App shell ---------- */
+  .app{display:grid;grid-template-columns:252px 1fr;height:100vh;transition:grid-template-columns .25s cubic-bezier(.3,.8,.3,1)}
+  .app.nav-collapsed{grid-template-columns:60px 1fr}
+
+  /* ---------- Sidebar ---------- */
+  .side{
+    background:var(--dark);color:#D9D2C2;display:flex;flex-direction:column;
+    padding:22px 16px;position:relative;overflow:hidden;transition:padding .25s;
+  }
+  .nav-collapsed .side{padding:16px 8px;overflow:hidden}
+  .side::before{ /* hallmark glow */
+    content:"";position:absolute;top:-120px;left:-60px;width:260px;height:260px;
+    background:radial-gradient(circle,var(--gold-glow),transparent 70%);pointer-events:none;
+  }
+  .brand{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:18px 8px 16px;margin-bottom:6px;position:relative;gap:10px}
+  .nav-toggle{position:absolute;top:2px;right:2px;width:28px;height:28px;border-radius:8px;display:grid;place-items:center;background:rgba(255,255,255,.08);color:#B8AE97;cursor:pointer;transition:.15s;flex:0 0 28px;border:none;}
+  .nav-toggle:hover{background:rgba(255,255,255,.14);color:#F1E9D6}
+  .nav-toggle svg{width:15px;height:15px}
+  .nav-toggle .icon-hamburger{display:none}
+  .nav-toggle .icon-collapse{display:block}
+  .nav-collapsed .nav-toggle .icon-collapse{display:none}
+  .nav-collapsed .nav-toggle .icon-hamburger{display:block}
+  .nav-collapsed .brandmark{display:none!important}
+  .nav-collapsed .brand{padding:14px 0 10px}
+  .brandmark{display:flex;flex-direction:column;align-items:center;gap:8px}
+  .brandmark .crest{width:40px;height:40px;border-radius:50%;border:1.4px solid var(--gold);display:grid;place-items:center;position:relative}
+  .brandmark .crest svg{width:19px;height:19px;color:var(--gold)}
+  .brandmark .word{font-family:var(--disp);font-weight:600;font-size:13px;letter-spacing:.22em;text-transform:uppercase;color:#F1E9D6;text-align:center;line-height:1.4}
+  .brandmark .rule{width:34px;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent)}
+  .brandmark .sub{font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:#8B8168}
+  .nav{margin-top:14px;display:flex;flex-direction:column;gap:3px;position:relative}
+  .nav .lbl{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#6E6650;padding:14px 12px 7px;font-weight:600}
+  .nav button{
+    display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:11px;
+    color:#B8AE97;font-size:13.5px;font-weight:500;text-align:left;width:100%;
+    transition:background .15s,color .15s;position:relative;
+  }
+  .nav button svg{width:18px;height:18px;flex:0 0 18px;opacity:.85}
+  .nav-collapsed .nav button{justify-content:center;padding:10px 0}
+  .nav-collapsed .nav button .nav-label{display:none}
+  .nav-collapsed .nav button::after{content:attr(data-label);position:absolute;left:calc(100% + 10px);top:50%;transform:translateY(-50%);background:var(--ink-2);color:#fff;font-size:12px;font-weight:500;padding:5px 10px;border-radius:8px;white-space:nowrap;pointer-events:none;opacity:0;transition:opacity .15s;z-index:100}
+  .nav-collapsed .nav button:hover::after{opacity:1}
+  .nav-collapsed .nav .lbl{display:none}
+  .nav button:hover{background:rgba(255,255,255,.05);color:#F1E9D6}
+  .nav button.on{background:rgba(255,255,255,.12);color:#fff;box-shadow:none}
+  .nav button.on svg{opacity:1;color:var(--gold)}
+  .side .foot{margin-top:auto;padding:14px 12px 4px;border-top:1px solid rgba(255,255,255,.07);position:relative}
+  .side .foot .chip{display:flex;align-items:center;gap:9px;font-size:12px;color:#A79A7C}
+  .nav-collapsed .side .foot .chip .chip-label{display:none}
+  .nav-collapsed .side .foot{padding:14px 4px 4px}
+  .dot{width:8px;height:8px;border-radius:50%;background:var(--mint);box-shadow:0 0 0 4px rgba(63,107,79,.18)}
+
+  /* ---------- Main ---------- */
+  .main{display:flex;flex-direction:column;overflow:hidden;min-width:0}
+  .topbar{
+    display:flex;align-items:center;gap:18px;padding:0 26px;height:68px;
+    background:rgba(255,255,255,.86);backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--line);flex:0 0 auto;z-index:5;
+  }
+  .crumb{display:flex;flex-direction:column;min-width:0}
+  .crumb .eyebrow{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--txt-3);font-weight:600}
+  .crumb h1{font-family:var(--disp);font-size:22px;font-weight:600;letter-spacing:-.2px;line-height:1.1}
+  .topbar .spacer{flex:1}
+  .selects{display:flex;gap:10px}
+  .field{position:relative;display:flex;align-items:flex-end}
+  .field label{position:absolute;bottom:calc(100% + 4px);left:2px;white-space:nowrap;font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--txt-3);font-weight:600}
+  .pick{
+    display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--line);
+    border-radius:10px;padding:0 12px;font-size:12.5px;font-weight:500;color:var(--ink);height:38px;
+    cursor:pointer;transition:border-color .15s,background .15s,color .15s;
+  }
+  .pick:hover{border-color:var(--gold);background:var(--gold-glow);color:var(--gold-deep)}
+  .pick svg{width:13px;height:13px;color:var(--txt-3);transition:color .15s}
+  .pick:hover svg{color:var(--gold-deep)}
+  .icon-btn{
+    width:38px;height:38px;border-radius:11px;display:grid;place-items:center;color:var(--txt-2);
+    border:1px solid var(--line);background:var(--surface);transition:.15s;
+  }
+  .icon-btn:hover{color:var(--gold-deep);border-color:var(--gold)}
+  .icon-btn svg{width:18px;height:18px}
+  .beacon{
+    position:relative;width:38px;height:38px;border-radius:11px;display:grid;place-items:center;
+    background:var(--brand-gradient);color:#1B1912;
+    box-shadow:0 8px 22px rgba(169,129,46,.35);transition:transform .2s;
+  }
+  .beacon:hover{transform:translateY(-1px)}
+  .beacon svg{width:19px;height:19px}
+  .beacon .pulse{
+    position:absolute;top:-4px;right:-4px;min-width:18px;height:18px;padding:0 4px;border-radius:9px;
+    background:var(--signal);color:#fff;font-size:10.5px;font-weight:700;display:grid;place-items:center;
+    border:2px solid var(--surface);
+  }
+  .beacon::after{content:"";position:absolute;inset:-3px;border-radius:14px;border:2px solid var(--gold);opacity:0;animation:ring 2.6s infinite}
+  @keyframes ring{0%{opacity:.5;transform:scale(.92)}70%{opacity:0;transform:scale(1.15)}100%{opacity:0}}
+  .avatar{width:38px;height:38px;border-radius:11px;background:var(--frost-2);border:1px solid var(--line);color:var(--txt-2);display:grid;place-items:center;overflow:hidden;cursor:pointer;transition:.15s}
+  .avatar:hover{border-color:var(--gold);color:var(--gold-deep)}
+  .avatar img{width:100%;height:100%;object-fit:cover}
+  .avatar svg{width:20px;height:20px}
+
+  .scroll{flex:1;overflow-y:auto;overflow-x:hidden;padding:26px}
+  .scroll::-webkit-scrollbar{width:10px}
+  .scroll::-webkit-scrollbar-thumb{background:#D9D2C0;border-radius:8px;border:3px solid var(--frost)}
+  .view{display:none;animation:rise .4s cubic-bezier(.2,.7,.3,1)}
+  .view.on{display:block}
+  @keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+
+  /* ---------- KPI cards ---------- */
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:22px}
+  .kpi{
+    background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:18px 20px;
+    box-shadow:var(--shadow);position:relative;overflow:hidden;
+  }
+  .kpi .glyph{position:absolute;top:14px;right:14px;width:34px;height:34px;border-radius:10px;display:grid;place-items:center}
+  .kpi .glyph svg{width:17px;height:17px}
+  .kpi .lab{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--txt-2);font-weight:600}
+  .kpi .num{font-family:var(--disp);font-size:38px;font-weight:600;letter-spacing:-1px;line-height:1.05;margin:6px 0 4px}
+  .kpi .sub{font-size:12px;color:var(--txt-3);display:flex;align-items:center;gap:5px}
+  .kpi .sub .up{color:var(--mint);font-weight:600}
+  .kpi .sub .down{color:var(--signal);font-weight:600}
+  .g-gold{background:var(--gold-glow);color:var(--gold-deep)}
+  .g-mint{background:var(--mint-soft);color:var(--mint)}
+  .g-signal{background:var(--signal-soft);color:var(--signal)}
+  .kpi.alert{background:linear-gradient(160deg,#fff,#FBF3F1)}
+
+  /* ---------- Panels ---------- */
+  .grid-2{display:grid;grid-template-columns:1.55fr 1fr;gap:16px;margin-bottom:22px}
+  .stack-v{display:flex;flex-direction:column;gap:16px;margin-bottom:22px}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
+  .card .hd{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--line-soft)}
+  .card .hd h3{font-family:var(--disp);font-size:15.5px;font-weight:600;letter-spacing:-.1px}
+  .card .hd .meta{font-size:11.5px;color:var(--txt-3)}
+  .card .bd{padding:18px 20px}
+
+  /* donut legend */
+  .legend{display:flex;flex-direction:column;gap:11px;justify-content:center}
+  .legend .row{display:flex;align-items:center;gap:10px;font-size:13px}
+  .legend .sw{width:10px;height:10px;border-radius:3px}
+  .legend .v{margin-left:auto;font-family:var(--disp);font-weight:600;font-variant-numeric:tabular-nums}
+  .donut-wrap{display:grid;grid-template-columns:150px 1fr;gap:18px;align-items:center}
+
+  /* ---------- Tabs ---------- */
+  .tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}
+  .tab{
+    padding:9px 16px;border-radius:999px;font-size:13px;font-weight:600;color:var(--txt-2);
+    background:var(--surface);border:1px solid var(--line);transition:.15s;display:flex;align-items:center;gap:8px;
+  }
+  .tab:hover{border-color:var(--gold)}
+  .tab.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .tab .cnt{font-size:11px;background:rgba(0,0,0,.06);padding:1px 7px;border-radius:999px;font-variant-numeric:tabular-nums}
+  .tab.on .cnt{background:rgba(255,255,255,.18)}
+  .tab.alert-tab{border-color:var(--signal);color:var(--signal)}
+  .tab.alert-tab .cnt{background:var(--signal-soft);color:var(--signal)}
+  .tab.alert-tab:hover{background:var(--signal-soft)}
+  .tab.on.alert-tab{background:var(--signal);border-color:var(--signal);color:#fff}
+  .tab.on.alert-tab .cnt{background:rgba(255,255,255,.22);color:#fff}
+  .actionbar .hint{font-size:12px;color:var(--txt-3);font-style:italic}
+
+  /* ---------- Table ---------- */
+  .tablecard{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
+  .ttop{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--line-soft)}
+  .ttop .l{display:flex;align-items:center;gap:10px}
+  .ttop h3{font-family:var(--disp);font-size:15.5px;font-weight:600}
+  .ttop .acts{display:flex;gap:6px}
+  .linkbtn{font-size:12.5px;font-weight:600;color:var(--gold-deep);padding:6px 10px;border-radius:8px;transition:.15s}
+  .linkbtn:hover{background:var(--gold-glow)}
+  .linkbtn.muted{color:var(--txt-3);pointer-events:none}
+  .tscroll{overflow-x:auto}
+  table{width:100%;border-collapse:collapse;font-size:13px;min-width:820px}
+  thead th{
+    text-align:left;font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--txt-3);
+    font-weight:600;padding:12px 14px;border-bottom:1px solid var(--line);white-space:nowrap;background:#FAF8F3;
+  }
+  tbody td{padding:13px 14px;border-bottom:1px solid var(--line-soft);white-space:nowrap;color:var(--ink)}
+  tbody tr{transition:background .12s}
+  tbody tr:hover{background:#FBF8EF}
+  tbody tr.sel{background:var(--gold-glow)}
+  tbody tr:last-child td{border-bottom:none}
+  .mono{font-variant-numeric:tabular-nums;font-weight:600}
+  .muted-c{color:var(--txt-2)}
+  .chk{appearance:none;width:17px;height:17px;border:1.6px solid #C9C0AA;border-radius:5px;cursor:pointer;position:relative;transition:.12s;vertical-align:middle}
+  .chk:checked{background:var(--gold);border-color:var(--gold)}
+  .chk:checked::after{content:"";position:absolute;left:5px;top:1.5px;width:4px;height:8px;border:2px solid #fff;border-top:0;border-left:0;transform:rotate(45deg)}
+  .pill{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;font-size:11.5px;font-weight:600;white-space:nowrap}
+  .p-rel{background:var(--mint-soft);color:#2C5A3E}
+  .p-cre{background:#EFEAE0;color:var(--txt-2)}
+  .p-sus{background:var(--signal-soft);color:var(--signal)}
+  .p-prog{background:var(--gold-glow);color:var(--gold-deep)}
+  .p-frz{background:var(--gold-glow);color:var(--gold-deep)}
+  .p-dot{width:6px;height:6px;border-radius:50%;background:currentColor}
+  .vip{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:999px;font-size:10.5px;font-weight:700;letter-spacing:.04em;background:var(--brand-gradient);color:#1B1912}
+  .vip svg{width:10px;height:10px}
+
+  /* action bar */
+  .actionbar{display:flex;align-items:center;gap:10px;padding:14px 20px;border-top:1px solid var(--line-soft);flex-wrap:wrap;background:#FAF8F3}
+  .actionbar .selnote{font-size:12.5px;color:var(--txt-2);margin-right:auto}
+  .actionbar .selnote b{color:var(--gold-deep)}
+  .btn{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:600;padding:9px 15px;border-radius:10px;transition:.15s;border:1px solid transparent}
+  .btn svg{width:14px;height:14px}
+  .btn-gold{background:var(--brand-gradient);color:#1B1912;box-shadow:0 6px 16px rgba(169,129,46,.28)}
+  .btn-gold:hover{filter:brightness(1.05)}
+  .btn-ghost{background:var(--surface);border-color:var(--line);color:var(--txt-2)}
+  .btn-ghost:hover{border-color:var(--gold);color:var(--gold-deep)}
+  .btn-signal{background:var(--signal);color:#fff}
+  .btn-signal:hover{filter:brightness(1.08)}
+  .btn-mint{background:var(--mint);color:#fff}
+  .btn-mint:hover{filter:brightness(1.08)}
+  .btn:disabled{opacity:.45;cursor:not-allowed}
+  .btn.sm{padding:6px 11px;font-size:11.5px}
+
+  /* ---------- Modal ---------- */
+  .scrim{position:fixed;inset:0;background:rgba(20,18,12,.5);backdrop-filter:blur(2px);display:none;align-items:center;justify-content:center;z-index:70}
+  .scrim.on{display:flex}
+  .modal{background:var(--surface);border-radius:20px;box-shadow:var(--shadow-lg);width:560px;max-width:92vw;max-height:88vh;overflow:auto;animation:modalIn .25s cubic-bezier(.2,.8,.3,1)}
+  @keyframes modalIn{from{opacity:0;transform:translateY(16px) scale(.98)}to{opacity:1;transform:none}}
+  .modal .hd{padding:22px 26px 4px;display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+  .modal .hd h2{font-family:var(--disp);font-size:20px;font-weight:600}
+  .modal .hd .close{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;color:var(--txt-3);transition:.15s;flex:0 0 30px}
+  .modal .hd .close:hover{background:var(--frost-2);color:var(--ink)}
+  .modal .bd{padding:16px 26px}
+  .modal .ft{padding:16px 26px 26px;display:flex;gap:10px;flex-wrap:wrap}
+  .field-grp{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
+  .field-grp label{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--txt-3);font-weight:600}
+  .field-grp select,.field-grp textarea,.field-grp input[type=text]{
+    font-family:inherit;font-size:13.5px;color:var(--ink);border:1px solid var(--line);border-radius:10px;
+    padding:10px 12px;background:var(--surface);
+  }
+  .field-grp select:focus,.field-grp textarea:focus,.field-grp input:focus{outline:2px solid var(--gold-glow);border-color:var(--gold)}
+  .field-grp textarea{resize:vertical;min-height:60px;font-family:var(--sans)}
+  .radiorow{display:flex;flex-direction:column;gap:8px}
+  .radiocard{display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:12px;padding:11px 13px;cursor:pointer;transition:.15s}
+  .radiocard:hover{border-color:var(--gold)}
+  .radiocard.sel{border-color:var(--gold);background:var(--gold-glow)}
+  .radiocard input{accent-color:var(--gold)}
+  .radiocard .t{font-size:13px;font-weight:600;color:var(--ink)}
+  .radiocard .d{font-size:11.5px;color:var(--txt-3)}
+  .prodrow{display:flex;gap:14px;align-items:center;background:var(--frost);border:1px solid var(--line);border-radius:14px;padding:14px}
+  .prodrow .swatch{width:52px;height:52px;border-radius:50%;background:var(--surface);border:1px solid var(--line-soft);flex:0 0 52px;display:grid;place-items:center;overflow:hidden;box-shadow:inset 0 0 0 1px rgba(0,0,0,.02)}
+  .prodrow .swatch svg{width:46px;height:46px}
+  .prodrow .info b{font-family:var(--disp);font-size:15px;font-weight:600;display:block}
+  .prodrow .info span{font-size:12px;color:var(--txt-3)}
+  .altcard{display:flex;gap:12px;align-items:center;border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin-bottom:10px}
+  .altcard .swatch{width:42px;height:42px;border-radius:50%;background:var(--surface);border:1px solid var(--line-soft);flex:0 0 42px;display:grid;place-items:center;overflow:hidden}
+  .altcard .swatch svg{width:37px;height:37px}
+  .altcard .info{flex:1}
+  .altcard .info b{font-size:13px;display:block}
+  .altcard .info span{font-size:11.5px;color:var(--txt-3)}
+
+  /* ---------- Toast ---------- */
+  .toasts{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:80;display:flex;flex-direction:column;gap:10px;align-items:center}
+  .toast{
+    background:var(--ink);color:#fff;padding:12px 18px;border-radius:12px;font-size:13px;font-weight:500;
+    box-shadow:var(--shadow-lg);display:flex;align-items:center;gap:10px;animation:toastIn .3s cubic-bezier(.2,.8,.3,1);max-width:90vw;
+  }
+  .toast .ti{width:20px;height:20px;border-radius:6px;background:var(--mint);display:grid;place-items:center;flex:0 0 20px}
+  .toast .ti svg{width:12px;height:12px;color:#fff}
+  @keyframes toastIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+
+  /* bars chart */
+  .bars{display:flex;align-items:flex-end;gap:14px;height:150px;padding-top:8px}
+  .bar-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:8px;height:100%;justify-content:flex-end}
+  .bar-stack{width:100%;max-width:46px;border-radius:7px 7px 0 0;overflow:hidden;display:flex;flex-direction:column-reverse;transition:.4s}
+  .bar-seg{width:100%}
+  .bar-lab{font-size:10.5px;color:var(--txt-3);font-weight:600;text-align:center}
+  .bar-val{font-family:var(--disp);font-size:12px;font-weight:600;color:var(--ink)}
+  .chart-legend{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:14px}
+  .chart-legend .cl-item{display:flex;align-items:center;gap:7px;font-size:12px;font-weight:600;color:var(--txt-2)}
+  .chart-legend .cl-sw{width:11px;height:11px;border-radius:3px;flex:0 0 11px}
+  .chart-legend .cl-note{margin-left:auto;font-size:11px;color:var(--txt-3);font-weight:500}
+
+  /* analytical widgets */
+  .grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:22px}
+  .hbars{display:flex;flex-direction:column;gap:13px}
+  .hbar{display:grid;grid-template-columns:86px 1fr 34px;align-items:center;gap:10px;font-size:12.5px}
+  .hbar .nm{font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .hbar .track{height:9px;background:var(--line-soft);border-radius:6px;overflow:hidden}
+  .hbar .fill{height:100%;border-radius:6px;width:0;transition:width .7s cubic-bezier(.2,.8,.3,1)}
+  .hbar .vv{font-family:var(--disp);font-weight:600;text-align:right;font-variant-numeric:tabular-nums}
+  .stockrow{display:flex;flex-direction:column;gap:12px}
+  .stockrow .it{display:flex;flex-direction:column;gap:5px}
+  .stockrow .it .top{display:flex;align-items:baseline;gap:8px;font-size:12.5px}
+  .stockrow .it .top .d{font-weight:600;color:var(--ink);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .stockrow .it .top .s{font-family:var(--disp);font-weight:600;font-variant-numeric:tabular-nums}
+  .insbanner{
+    display:flex;align-items:center;gap:14px;
+    background:linear-gradient(var(--frost),var(--frost)) padding-box,
+               linear-gradient(135deg,#D8B24A,#8A6A22) border-box;
+    background-color:rgba(169,129,46,.06);
+    border:2px solid transparent;
+    border-radius:var(--radius);padding:16px 20px;margin-bottom:22px;
+    box-shadow:var(--shadow);
+  }
+  .insbanner .ic{width:38px;height:38px;border-radius:11px;background:var(--brand-gradient);display:grid;place-items:center;flex:0 0 38px;color:#1B1912}
+  .insbanner .ic svg{width:19px;height:19px}
+  .insbanner .tx{flex:1;font-size:13px;line-height:1.5;color:var(--txt-2)}
+  .insbanner .tx b{color:var(--ink);font-weight:700}
+  .insbanner .go{background:var(--brand-gradient);color:#1B1912;font-weight:600;font-size:12.5px;padding:9px 16px;border-radius:10px;white-space:nowrap;transition:.15s;border:none}
+  .insbanner .go:hover{opacity:.88}
+  .donut-sm{display:grid;grid-template-columns:118px 1fr;gap:16px;align-items:center}
+
+  /* progress rail (dispatch / transfers) */
+  .rail{display:flex;align-items:center;gap:0;margin:2px 0 4px}
+  .rail .stp{display:flex;flex-direction:column;align-items:center;gap:5px;flex:1;position:relative}
+  .rail .stp .dotc{width:22px;height:22px;border-radius:50%;border:2px solid var(--line);background:var(--surface);display:grid;place-items:center;font-size:10px;font-weight:700;color:var(--txt-3);z-index:1}
+  .rail .stp.done .dotc{background:var(--mint);border-color:var(--mint);color:#fff}
+  .rail .stp.now .dotc{background:var(--gold);border-color:var(--gold);color:#1B1912}
+  .rail .stp .lb{font-size:10px;color:var(--txt-3);font-weight:600;text-align:center;white-space:nowrap}
+  .rail .stp.done .lb,.rail .stp.now .lb{color:var(--ink)}
+  .rail .ln{flex:1;height:2px;background:var(--line);margin-bottom:20px}
+  .rail .ln.done{background:var(--mint)}
+
+  /* ---------- Market toggle ---------- */
+  .marketswitch{display:flex;align-items:center;background:var(--frost-2);border:1px solid var(--line);border-radius:10px;padding:3px;gap:2px}
+  .marketswitch button{padding:6px 12px;border-radius:8px;font-size:11.5px;font-weight:700;letter-spacing:.03em;color:var(--txt-2);transition:.15s}
+  .marketswitch button.on{background:var(--ink);color:#fff}
+  .market-note{display:flex;gap:12px;align-items:flex-start;background:var(--gold-soft);border:1px solid var(--gold-glow);border-radius:var(--radius-s);padding:12px 16px;margin-bottom:18px;font-size:12.5px;color:var(--txt-2);line-height:1.5}
+  .market-note svg{width:16px;height:16px;flex:0 0 16px;color:var(--gold-deep);margin-top:1px}
+  .market-note b{color:var(--ink)}
+
+  /* ---------- Approval activity feed ---------- */
+  .activity{display:flex;flex-direction:column;gap:0}
+  .activity .ev{display:flex;gap:11px;padding:11px 0;border-bottom:1px solid var(--line-soft)}
+  .activity .ev:last-child{border-bottom:none;padding-bottom:2px}
+  .activity .ev .dotwrap{flex:0 0 18px;display:flex;justify-content:center;padding-top:3px}
+  .activity .ev .adot{width:8px;height:8px;border-radius:50%}
+  .activity .ev .txt{flex:1;font-size:12.5px;line-height:1.45;color:var(--txt-2)}
+  .activity .ev .txt b{color:var(--ink);font-weight:700}
+  .activity .ev .tm{font-size:10.5px;color:var(--txt-3);white-space:nowrap;font-weight:600}
+  .exceptstat{display:flex;gap:10px;margin-bottom:14px}
+  .exceptstat .es{flex:1;background:var(--frost);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+  .exceptstat .es .n{font-family:var(--disp);font-size:20px;font-weight:700;line-height:1}
+  .exceptstat .es .l{font-size:10.5px;color:var(--txt-3);font-weight:600;text-transform:uppercase;letter-spacing:.04em;margin-top:3px}
+
+  /* ---------- Transfer context block ---------- */
+  .ctxblock{background:var(--frost);border:1px dashed var(--line);border-radius:12px;padding:12px 14px;margin-top:10px;display:grid;grid-template-columns:1fr 1fr;gap:8px 20px;font-size:12px}
+  .ctxblock .kv span{display:block;font-size:9.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--txt-3);font-weight:600;margin-bottom:2px}
+  .ctxblock .kv b{color:var(--ink);font-weight:600;font-size:12.5px}
+  .ctxblock .kv.full{grid-column:1 / -1}
+
+  /* ---------- validation ---------- */
+  .field-grp.invalid textarea,.field-grp.invalid input{border-color:var(--signal)!important}
+  .field-grp .errmsg{font-size:11px;color:var(--signal);font-weight:600;display:none}
+  .field-grp.invalid .errmsg{display:block}
+  .serialrow{display:flex;gap:8px}
+  .serialrow input{flex:1}
+  .serialrow button{flex:0 0 auto}
+
+  /* ---------- global search ---------- */
+  .searchwrap{position:relative}
+  .searchpanel{
+    position:absolute;top:calc(100% + 10px);right:0;width:360px;background:var(--surface);
+    border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow-lg);z-index:60;
+    display:none;overflow:hidden;
+  }
+  .searchpanel.on{display:block}
+  .searchpanel .sin{display:flex;align-items:center;gap:9px;padding:12px 14px;border-bottom:1px solid var(--line-soft)}
+  .searchpanel .sin svg{width:16px;height:16px;color:var(--txt-3);flex:0 0 16px}
+  .searchpanel .sin input{flex:1;border:none;outline:none;font-size:13.5px;font-family:inherit;color:var(--ink)}
+  .searchresults{max-height:340px;overflow-y:auto}
+  .searchresults .sr{display:flex;align-items:center;gap:10px;padding:10px 14px;cursor:pointer;transition:.12s;border-bottom:1px solid var(--line-soft)}
+  .searchresults .sr:last-child{border-bottom:none}
+  .searchresults .sr:hover{background:var(--gold-glow)}
+  .searchresults .sr .sr-main{flex:1;min-width:0}
+  .searchresults .sr .sr-main b{font-size:13px;display:block;color:var(--ink)}
+  .searchresults .sr .sr-main span{font-size:11.5px;color:var(--txt-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
+  .searchresults .sr .sr-tag{font-size:9.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--gold-deep);background:var(--gold-glow);padding:3px 8px;border-radius:999px;flex:0 0 auto}
+  .searchresults .empty{padding:22px 14px;text-align:center;color:var(--txt-3);font-size:12.5px}
+
+  /* ---------- table filter bar ---------- */
+  .filterbar{display:flex;align-items:center;gap:10px;padding:12px 20px;border-bottom:1px solid var(--line-soft);background:#FAF8F3}
+  .filterbar .fin{display:flex;align-items:center;gap:8px;flex:1;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:0 12px;height:36px}
+  .filterbar .fin svg{width:14px;height:14px;color:var(--txt-3);flex:0 0 14px}
+  .filterbar .fin input{flex:1;border:none;outline:none;font-family:inherit;font-size:12.5px;color:var(--ink);height:100%;background:transparent}
+  .filterbar .fclear{font-size:11.5px;font-weight:600;color:var(--txt-3);padding:4px 8px;border-radius:8px;transition:.15s}
+  .filterbar .fclear:hover{color:var(--signal);background:var(--signal-soft)}
+  .filterbar .fcount{font-size:11.5px;color:var(--txt-3);white-space:nowrap}
+
+  /* ---------- condition register ---------- */
+  .chipbar{display:flex;gap:7px;flex-wrap:wrap;padding:12px 20px 0}
+  .chip-f{padding:6px 13px;border-radius:999px;font-size:11.5px;font-weight:600;border:1px solid var(--line);color:var(--txt-2);background:var(--surface);transition:.15s}
+  .chip-f:hover{border-color:var(--gold)}
+  .chip-f.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .p-mint2{background:var(--mint-soft);color:#2C5A3E}
+  .p-good{background:var(--gold-glow);color:var(--gold-deep)}
+  .p-fair{background:#FBEADD;color:#9C5A1E}
+  .p-damaged{background:var(--signal-soft);color:var(--signal)}
+  .p-unconf{background:#EFEAE0;color:var(--txt-2)}
+  .wthumb{width:38px;height:38px;border-radius:50%;background:var(--surface);border:1px solid var(--line-soft);display:grid;place-items:center;overflow:hidden;flex:0 0 38px}
+  .wthumb svg{width:34px;height:34px}
+  .excludedtag{font-size:10px;font-weight:700;letter-spacing:.03em;color:var(--signal);display:flex;align-items:center;gap:4px;margin-top:2px}
+  .excludedtag svg{width:10px;height:10px}
+  .watchdetail{display:flex;gap:16px;align-items:flex-start;background:var(--frost);border:1px solid var(--line);border-radius:14px;padding:16px}
+  .watchdetail .img{width:96px;height:96px;border-radius:16px;background:var(--surface);border:1px solid var(--line-soft);display:grid;place-items:center;overflow:hidden;flex:0 0 96px}
+  .watchdetail .img svg{width:88px;height:88px}
+  .watchdetail .meta b{font-family:var(--disp);font-size:17px;font-weight:600;display:block}
+  .watchdetail .meta .sub{font-size:12px;color:var(--txt-3);margin-top:2px}
+  .watchdetail .meta .kvrow{display:flex;flex-wrap:wrap;gap:14px;margin-top:10px}
+  .watchdetail .meta .kvrow div span{display:block;font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--txt-3);font-weight:600}
+  .watchdetail .meta .kvrow div b{font-family:var(--sans);font-size:12.5px;font-weight:700;color:var(--ink);display:block;margin-top:1px}
+  .attach-zone{border:1.4px dashed var(--line);border-radius:12px;padding:16px;text-align:center;cursor:pointer;transition:.15s;background:var(--surface)}
+  .attach-zone:hover{border-color:var(--gold);background:var(--gold-glow)}
+  .attach-zone svg{width:22px;height:22px;color:var(--txt-3);margin-bottom:6px}
+  .attach-zone .t{font-size:12.5px;font-weight:600;color:var(--ink)}
+  .attach-zone .d{font-size:11px;color:var(--txt-3);margin-top:2px}
+  .attachlist{display:flex;flex-direction:column;gap:6px;margin-top:10px}
+  .attachlist .af{display:flex;align-items:center;gap:9px;background:var(--frost);border:1px solid var(--line);border-radius:9px;padding:7px 10px;font-size:12px}
+  .attachlist .af svg{width:14px;height:14px;color:var(--gold-deep);flex:0 0 14px}
+  .attachlist .af .nm{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .attachlist .af .rm{color:var(--txt-3);cursor:pointer;flex:0 0 auto}
+  .attachlist .af .rm:hover{color:var(--signal)}
+
+  /* ---------- condition ↔ queue linkage ---------- */
+  .regflag{font-size:10px;font-weight:700;letter-spacing:.02em;display:flex;align-items:center;gap:4px;margin-top:4px}
+  .regflag svg{width:10px;height:10px;flex:0 0 10px}
+  .regflag-blocked{color:var(--signal)}
+  .regflag-warn{color:var(--gold-deep)}
+  .ackrow{display:flex;align-items:flex-start;gap:9px;margin-top:10px;cursor:pointer}
+  .ackrow input{margin-top:2px;accent-color:var(--gold);width:15px;height:15px;flex:0 0 15px}
+  .ackrow span{font-size:12.5px;font-weight:600;color:var(--ink)}
+  .ackrow.invalid span{color:var(--signal)}
+  .regsync{border:1px dashed var(--line);border-radius:12px;padding:12px 14px;margin-top:4px;background:var(--frost)}
+  .regsync .toggrow{display:flex;align-items:center;gap:9px;font-size:12.5px;font-weight:600;color:var(--ink);cursor:pointer}
+  .regsync .toggrow input{accent-color:var(--gold);width:15px;height:15px}
+  .regsync select{margin-top:10px;font-family:inherit;font-size:13.5px;color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:8px 12px;background:var(--surface);width:100%}
+  .block-icon{width:52px;height:52px;border-radius:50%;background:var(--signal-soft);color:var(--signal);display:grid;place-items:center;margin:4px auto 14px}
+  .block-icon svg{width:24px;height:24px}
+
+  /* ---------- AI alternative suggestions ---------- */
+  .btn-ai{background:var(--surface);border:1.4px solid var(--gold);color:var(--gold-deep)}
+  .btn-ai:hover{background:var(--gold-glow)}
+  .btn-ai svg{width:13px;height:13px}
+  tr.ai-row{background:linear-gradient(90deg,rgba(169,129,46,.07),transparent 55%)}
+  tr.ai-row:hover{background:linear-gradient(90deg,rgba(169,129,46,.11),#F5FAFD 55%)}
+  .aitoggle{display:flex;align-items:center;gap:7px;padding:6px 13px;border-radius:999px;font-size:11.5px;font-weight:700;border:1.4px solid var(--gold);color:var(--gold-deep);background:var(--surface);transition:.15s}
+  .aitoggle svg{width:13px;height:13px}
+  .aitoggle:hover{background:var(--gold-glow)}
+  .aitoggle.on{background:var(--brand-gradient);color:#1B1912;border-color:transparent}
+  .unavail-tag{display:inline-flex;align-items:center;gap:5px;font-size:10.5px;font-weight:700;color:var(--signal);background:var(--signal-soft);padding:3px 9px;border-radius:999px;margin-top:6px}
+  .altcard{position:relative}
+  .altcard .altmeta{font-size:11px;color:var(--txt-3);margin-top:2px}
+  .altcard .altscore{font-size:10.5px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;color:var(--gold-deep)}
+  .altcard .altprice{font-family:var(--disp);font-weight:700;font-size:15px;color:var(--ink)}
+  .altcard .altright{display:flex;flex-direction:column;align-items:flex-end;gap:3px;flex:0 0 auto;text-align:right}
+
+  @media (max-width:1180px){
+    .kpis{grid-template-columns:repeat(2,1fr)}
+    .grid-3{grid-template-columns:1fr}
+    .grid-2{grid-template-columns:1fr}
+  }
+  @media (max-width:780px){
+    .app{grid-template-columns:1fr}
+    .side{display:none}
+    .selects{display:none}
+    .kpis{grid-template-columns:1fr}
+  }
+  .hidden{display:none!important}
+
+  /* ---------- Head Office: store performance ---------- */
+  .periodbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:18px}
+  .periodbar .seg{display:flex;background:var(--frost-2);border:1px solid var(--line);border-radius:10px;padding:3px;gap:2px}
+  .periodbar .seg button{padding:7px 13px;border-radius:8px;font-size:12px;font-weight:700;color:var(--txt-2);transition:.15s}
+  .periodbar .seg button.on{background:var(--ink);color:#fff}
+  .periodbar select{font-family:inherit;font-size:12.5px;font-weight:600;color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:8px 12px;background:var(--surface)}
+  .periodbar .pnote{font-size:11.5px;color:var(--txt-3);margin-left:auto}
+  .rankbadge{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-family:var(--disp);font-weight:700;font-size:12.5px;background:var(--frost-2);color:var(--txt-2);flex:0 0 28px}
+  .rankbadge.r1{background:linear-gradient(135deg,#F3D98A,#C9A227);color:#1B1912}
+  .rankbadge.r2{background:linear-gradient(135deg,#E7E3DA,#B9B4A6);color:#1B1912}
+  .rankbadge.r3{background:linear-gradient(135deg,#E3C7A8,#B98E5E);color:#1B1912}
+  .perfscore{display:inline-flex;align-items:center;gap:6px;font-family:var(--disp);font-weight:700;font-size:15px}
+  .perfscore .pdelta{font-size:10.5px;font-weight:700;font-family:var(--sans);display:inline-flex;align-items:center;gap:2px}
+  .perfscore .pdelta.up{color:var(--mint)}
+  .perfscore .pdelta.down{color:var(--signal)}
+  .perfscore .pdelta.flat{color:var(--txt-3)}
+  .perfscore .pdelta svg{width:9px;height:9px}
+  .storerow-country{font-size:10.5px;font-weight:700;letter-spacing:.03em;color:var(--txt-3);text-transform:uppercase}
+  .hq-summary{display:flex;gap:10px;margin-bottom:4px}
+  .hq-summary .es{flex:1}
+  .storeprofile{display:flex;gap:18px;align-items:flex-start;flex-wrap:wrap}
+  .storeprofile .avatar-mgr{width:58px;height:58px;border-radius:50%;background:var(--brand-gradient);color:#1B1912;display:grid;place-items:center;font-family:var(--disp);font-weight:700;font-size:19px;flex:0 0 58px}
+  .storeprofile .pmeta{flex:1;min-width:220px}
+  .storeprofile .pmeta h2{font-family:var(--disp);font-size:19px;font-weight:600}
+  .storeprofile .pmeta .role{font-size:12px;color:var(--txt-3);margin-top:1px}
+  .storeprofile .plist{display:grid;grid-template-columns:1fr 1fr;gap:10px 22px;margin-top:12px}
+  .storeprofile .plist .kv span{display:block;font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--txt-3);font-weight:600}
+  .storeprofile .plist .kv b{font-size:12.5px;font-weight:600;color:var(--ink);display:block;margin-top:1px}
+  .storeprofile .plist .kv a{color:var(--gold-deep);text-decoration:none}
+  .storeprofile .plist .kv a:hover{text-decoration:underline}
+  .backlink{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;color:var(--txt-2);margin-bottom:14px;cursor:pointer}
+  .backlink:hover{color:var(--gold-deep)}
+  .backlink svg{width:14px;height:14px}
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- SIDEBAR -->
+  <aside class="side">
+    <div class="brand">
+      <button class="nav-toggle" id="navToggle" title="Toggle navigation">
+        <svg class="icon-collapse" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+        <svg class="icon-hamburger" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+      </button>
+      <div class="brandmark">
+        <div class="crest">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.2 2"/></svg>
+        </div>
+        <div class="word">Watches of<br>Switzerland</div>
+        <div class="rule"></div>
+        <div class="sub">Fulfilment Console</div>
+      </div>
+    </div>
+    <nav class="nav">
+      <div class="lbl">Operations</div>
+      <button data-view="overview" data-label="Overview" class="on">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
+        <span class="nav-label">Overview</span>
+      </button>
+      <button data-view="queue" data-label="Allocation Queue" id="navQueue">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M9 11l2 2 4-4"/><rect x="3" y="4" width="18" height="16" rx="2"/></svg>
+        <span class="nav-label">Allocation Queue</span>
+      </button>
+      <button data-view="tracker" data-label="Order Tracker" id="navTracker">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="6" r="2.2"/><circle cx="12" cy="12" r="2.2"/><circle cx="12" cy="18" r="2.2"/><path d="M12 8.2v1.6M12 14.2v1.6"/></svg>
+        <span class="nav-label">Order Tracker</span>
+      </button>
+      <div class="lbl">Fulfilment</div>
+      <button data-view="dispatch" data-label="Pack &amp; Dispatch" id="navDispatch">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M1 3h15v13H1z"/><path d="M16 8h4l3 3v5h-7z"/><circle cx="5.5" cy="18.5" r="2"/><circle cx="18.5" cy="18.5" r="2"/></svg>
+        <span class="nav-label">Pack &amp; Dispatch</span>
+      </button>
+      <button data-view="transfers" data-label="Store Transfers">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M21 8 12 13 3 8M3 8l9-5 9 5v8l-9 5-9-5z"/></svg>
+        <span class="nav-label">Store Transfers</span>
+      </button>
+      <button data-view="payment" data-label="Payment Clearance">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="2" y="5" width="20" height="14" rx="2.4"/><path d="M2 10h20"/></svg>
+        <span class="nav-label">Payment Clearance</span>
+      </button>
+      <div class="lbl">Inventory</div>
+      <button data-view="condition" data-label="Condition Register" id="navCondition">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.2 2"/><path d="m3.5 8.5 1.5 1M20.5 8.5 19 9.5M3.5 15.5 5 14.5M20.5 15.5 19 14.5"/></svg>
+        <span class="nav-label">Condition Register</span>
+      </button>
+      <div class="lbl">Head Office</div>
+      <button data-view="hq" data-label="Store Performance" id="navHq">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 21V8l7-4 7 4v13"/><path d="M10 21v-6h4v6"/><path d="M17 21V11l4-2v12"/></svg>
+        <span class="nav-label">Store Performance</span>
+      </button>
+    </nav>
+    <div class="foot">
+      <div class="chip"><span class="dot"></span><span class="chip-label" id="footChip"> L032 · London — Regent St online</span></div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main">
+    <header class="topbar">
+      <div class="crumb">
+        <span class="eyebrow">Sales Order Fulfilment</span>
+        <h1 id="pageTitle">Overview</h1>
+      </div>
+      <div class="spacer"></div>
+      <div class="marketswitch" id="marketSwitch">
+        <button class="on" data-mkt="UK">UK</button>
+        <button data-mkt="US">US</button>
+      </div>
+      <div class="selects">
+        <div class="field">
+          <div class="pick" id="storePick">L032 · London — Regent St
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+          </div>
+        </div>
+        <div class="field">
+          <div class="pick">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M8 2v4M16 2v4M3 10h18"/></svg>
+            19 Aug 2026
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+          </div>
+        </div>
+      </div>
+      <div class="searchwrap">
+        <button class="icon-btn" id="searchBtn" title="Search orders">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+        </button>
+        <div class="searchpanel" id="searchPanel">
+          <div class="sin">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+            <input type="text" id="globalSearchInput" placeholder="Search by order, customer or piece…">
+          </div>
+          <div class="searchresults" id="globalSearchResults"></div>
+        </div>
+      </div>
+      <button class="beacon" id="beaconBtn" title="Insights">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="m6 3 6-1 6 1 3 5-9 13L3 8z"/><path d="M3 8h18M9 3l3 18M15 3l-3 18"/></svg>
+        <span class="pulse" id="beaconCount">2</span>
+      </button>
+      <div class="avatar" id="userAvatar" title="Profile">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+      </div>
+    </header>
+
+    <div class="scroll">
+
+      <!-- ============ OVERVIEW ============ -->
+      <section class="view on" id="view-overview">
+        <div class="kpis">
+          <div class="kpi">
+            <div class="glyph g-gold"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 11l2 2 4-4"/></svg></div>
+            <div class="lab">Open allocation requests</div>
+            <div class="num tnum" data-count="34">0</div>
+            <div class="sub"><span class="up">▲ 6</span> sent in the last hour</div>
+          </div>
+          <div class="kpi">
+            <div class="glyph g-mint"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 6 9 17l-5-5"/></svg></div>
+            <div class="lab">Accepted today</div>
+            <div class="num tnum" data-count="21">0</div>
+            <div class="sub"><span class="up">▲ 3</span> in the last hour</div>
+          </div>
+          <div class="kpi alert">
+            <div class="glyph g-signal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg></div>
+            <div class="lab">Declined today</div>
+            <div class="num tnum" data-count="9">0</div>
+            <div class="sub">3 condition · 4 stock · 2 other</div>
+          </div>
+          <div class="kpi">
+            <div class="glyph g-gold"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="5" width="20" height="14" rx="2.4"/><path d="M2 10h20"/></svg></div>
+            <div class="lab">Awaiting fraud clearance</div>
+            <div class="num tnum" data-count="5">0</div>
+            <div class="sub"><b style="color:var(--gold-deep)">2</b> are VIP holds</div>
+          </div>
+        </div>
+
+        <div class="insbanner">
+          <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2a5 5 0 0 0-5 5c0 2 1 3 1.5 4.5S9 15 9 16h6c0-1 .5-2.5 1-4S20 9 20 7a5 5 0 0 0-5-5"/><path d="M9 20h6M10 22h4"/></svg></div>
+          <div class="tx" id="ovAiBannerText">Loading…</div>
+          <button class="go" id="ovGo">Show me</button>
+        </div>
+
+        <div class="grid-2">
+          <div class="card">
+            <div class="hd"><h3>Decisions this week</h3><span class="meta">Mon 10 – Sun 16 Aug</span></div>
+            <div class="bd">
+              <div class="chart-legend">
+                <div class="cl-item"><span class="cl-sw" style="background:var(--mint)"></span>Accepted</div>
+                <div class="cl-item"><span class="cl-sw" style="background:var(--signal)"></span>Declined</div>
+                <div class="cl-note">140 requests this week</div>
+              </div>
+              <div class="bars" id="ovBars"></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="hd"><h3>Decline reasons</h3><span class="meta">Last 7 days</span></div>
+            <div class="bd">
+              <div class="donut-wrap">
+                <svg viewBox="0 0 42 42" id="ovDonut" style="transform:rotate(-90deg)"></svg>
+                <div class="legend" id="ovDonutLeg"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid-3">
+          <div class="card">
+            <div class="hd"><h3>Requests by region</h3></div>
+            <div class="bd"><div class="hbars" id="ovRegions"></div></div>
+          </div>
+          <div class="card">
+            <div class="hd"><h3>VIP orders in queue</h3><span class="meta">4 open</span></div>
+            <div class="bd"><div class="stockrow" id="ovVip"></div></div>
+          </div>
+          <div class="card">
+            <div class="hd"><h3>Payment method mix</h3></div>
+            <div class="bd">
+              <div class="donut-sm">
+                <svg viewBox="0 0 42 42" id="ovPayDonut" style="transform:rotate(-90deg)"></svg>
+                <div class="legend" id="ovPayLeg"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ ALLOCATION QUEUE ============ -->
+      <section class="view" id="view-queue">
+        <div class="market-note" id="queueMarketNote">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16.2v.1"/></svg>
+          <div><b>UK process:</b> the receiving store confirms availability and condition directly, then approves or rejects each line — this replaces the manual email confirmation previously sent by the central Ecommerce team.</div>
+        </div>
+        <div class="tabs" id="queueTabs">
+          <button class="tab on" data-tab="new">New <span class="cnt">12</span></button>
+          <button class="tab alert-tab" data-tab="soon">Responding soon <span class="cnt">4</span></button>
+          <button class="tab" data-tab="accepted">Accepted <span class="cnt">21</span></button>
+          <button class="tab" data-tab="declined">Declined <span class="cnt">9</span></button>
+          <button class="tab" data-tab="all">All requests <span class="cnt">46</span></button>
+        </div>
+        <div class="stack-v">
+          <div class="tablecard">
+            <div class="ttop">
+              <div class="l"><h3 id="queueTitle">New requests</h3></div>
+              <div class="acts">
+                <button class="linkbtn" id="queueGo">Refresh</button>
+              </div>
+            </div>
+            <div class="filterbar">
+              <div class="fin">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+                <input type="text" id="queueFilter" placeholder="Filter by order, customer or piece…">
+              </div>
+              <button class="aitoggle" id="queueAiToggle">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2a5 5 0 0 0-5 5c0 2 1 3 1.5 4.5S9 15 9 16h6c0-1 .5-2.5 1-4S20 9 20 7a5 5 0 0 0-5-5"/></svg>
+                AI alternatives only
+              </button>
+              <span class="fcount" id="queueFilterCount"></span>
+              <button class="fclear hidden" id="queueFilterClear">Clear</button>
+            </div>
+            <div class="tscroll">
+              <table>
+                <thead><tr>
+                  <th>Order</th><th>Requested piece</th><th>Customer</th><th>Est. stock</th><th>Condition</th><th>Time left</th><th>Status</th><th>Action</th>
+                </tr></thead>
+                <tbody id="queueBody"></tbody>
+              </table>
+            </div>
+            <div class="actionbar">
+              <div class="selnote hint" id="queueHint">Decisions must be made within 4 hours of a request to hold priority sequencing.</div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="hd"><h3>Approval activity</h3><span class="meta">Live, this store</span></div>
+            <div class="bd">
+              <div class="exceptstat">
+                <div class="es"><div class="n" id="exReallocN" style="color:var(--gold-deep)">0</div><div class="l">Reallocated today</div></div>
+                <div class="es"><div class="n" id="exOpenN" style="color:var(--signal)">0</div><div class="l">Exceptions open</div></div>
+              </div>
+              <div class="activity" id="activityFeed"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ ORDER TRACKER ============ -->
+      <section class="view" id="view-tracker">
+        <div class="market-note">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16.2v.1"/></svg>
+          <div>One line per order, four traffic lights: <b>Approval</b>, <b>Payment</b>, <b>Blocked</b> and <b>Ready to ship</b> — green means clear to proceed, amber means action pending, red means it needs attention now.</div>
+        </div>
+        <div class="tablecard">
+          <div class="ttop">
+            <div class="l"><h3>Order status board</h3></div>
+            <div class="acts"><span class="meta" style="color:var(--txt-3);font-size:11.5px">Updates live as orders move through approval, payment and dispatch</span></div>
+          </div>
+          <div class="filterbar">
+            <div class="fin">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+              <input type="text" id="trackerFilter" placeholder="Filter by order, customer or piece…">
+            </div>
+            <span class="fcount" id="trackerFilterCount"></span>
+            <button class="fclear hidden" id="trackerFilterClear">Clear</button>
+          </div>
+          <div class="tscroll">
+            <table>
+              <thead><tr>
+                <th>Order</th><th>Customer</th><th>Piece</th><th>Approval</th><th>Payment</th><th>Blocked</th><th>Ready to ship</th>
+              </tr></thead>
+              <tbody id="trackerBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ PACK & DISPATCH ============ -->
+      <section class="view" id="view-dispatch">
+        <div class="market-note" id="dispatchMarketNote">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16.2v.1"/></svg>
+          <div><b>UK process:</b> this store packs the piece with its paperwork and dispatches it directly — either to the counter for collection or by courier to the transfer store.</div>
+        </div>
+        <div class="tabs" id="dispatchTabs">
+          <button class="tab on" data-tab="pending">Ready to pack <span class="cnt">6</span></button>
+          <button class="tab" data-tab="packed">Packed <span class="cnt">8</span></button>
+        </div>
+        <div class="tablecard">
+          <div class="ttop">
+            <div class="l"><h3 id="dispatchTitle">Ready to pack</h3></div>
+            <div class="acts"><span class="meta" style="color:var(--txt-3);font-size:11.5px">Paperwork + product bagged together, per store procedure</span></div>
+          </div>
+          <div id="dispatchList" style="padding:6px 20px 20px"></div>
+        </div>
+      </section>
+
+      <!-- ============ STORE TRANSFERS ============ -->
+      <section class="view" id="view-transfers">
+        <div class="tablecard">
+          <div class="ttop">
+            <div class="l"><h3>Watches in transit for customer collection</h3></div>
+            <div class="acts"><span class="meta" style="color:var(--txt-3);font-size:11.5px">Each transfer carries the order, customer and reason so the receiving store knows exactly why it arrived</span></div>
+          </div>
+          <div id="transfersList" style="padding:6px 20px 20px"></div>
+        </div>
+      </section>
+
+      <!-- ============ PAYMENT CLEARANCE ============ -->
+      <section class="view" id="view-payment">
+        <div class="kpis" style="grid-template-columns:repeat(3,1fr)">
+          <div class="kpi">
+            <div class="glyph g-gold"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="5" width="20" height="14" rx="2.4"/><path d="M2 10h20"/></svg></div>
+            <div class="lab">Held for fraud check</div>
+            <div class="num tnum" data-count="5">0</div>
+            <div class="sub">Payment capture blocked until cleared</div>
+          </div>
+          <div class="kpi">
+            <div class="glyph g-mint"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 6 9 17l-5-5"/></svg></div>
+            <div class="lab">Self-cleared (PayPal etc.)</div>
+            <div class="num tnum" data-count="14">0</div>
+            <div class="sub">Provider handles fraud checks</div>
+          </div>
+          <div class="kpi">
+            <div class="glyph g-gold"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m6 3 6-1 6 1 3 5-9 13L3 8z"/></svg></div>
+            <div class="lab">VIP holds</div>
+            <div class="num tnum" data-count="2">0</div>
+            <div class="sub">Flagged for expedited review</div>
+          </div>
+        </div>
+        <div class="tablecard">
+          <div class="ttop"><div class="l"><h3>Orders awaiting payment release</h3></div></div>
+          <div class="filterbar">
+            <div class="fin">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+              <input type="text" id="paymentFilter" placeholder="Filter by order, customer or piece…">
+            </div>
+            <span class="fcount" id="paymentFilterCount"></span>
+            <button class="fclear hidden" id="paymentFilterClear">Clear</button>
+          </div>
+          <div class="tscroll">
+            <table>
+              <thead><tr>
+                <th>Order</th><th>Customer</th><th>Piece</th><th>Payment method</th><th>Fraud check</th><th>Status</th><th>Action</th>
+              </tr></thead>
+              <tbody id="paymentBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ CONDITION REGISTER ============ -->
+      <section class="view" id="view-condition">
+        <div class="market-note">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16.2v.1"/></svg>
+          <div><b>Why this matters:</b> the Allocation Queue matches Sales Orders against the condition held here. A piece marked <b>Fair</b> or <b>Damaged</b> is automatically excluded from fulfilment matching — so a store is never sent an order for a piece it can no longer supply in the condition the customer ordered.</div>
+        </div>
+        <div class="kpis" style="grid-template-columns:repeat(4,1fr)">
+          <div class="kpi">
+            <div class="glyph g-gold"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.2 2"/></svg></div>
+            <div class="lab">Watches in this store</div>
+            <div class="num tnum" id="kpiTotalWatches">0</div>
+            <div class="sub">Register covers L032 · London</div>
+          </div>
+          <div class="kpi alert">
+            <div class="glyph g-signal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg></div>
+            <div class="lab">Never condition-checked</div>
+            <div class="num tnum" id="kpiUnconfirmed">0</div>
+            <div class="sub">Received without a check on arrival</div>
+          </div>
+          <div class="kpi">
+            <div class="glyph g-signal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m6 3 6-1 6 1 3 5-9 13L3 8z"/></svg></div>
+            <div class="lab">Fair / Damaged</div>
+            <div class="num tnum" id="kpiFairDamaged">0</div>
+            <div class="sub">Excluded from allocation matching</div>
+          </div>
+          <div class="kpi">
+            <div class="glyph g-mint"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 6 9 17l-5-5"/></svg></div>
+            <div class="lab">Updated recently</div>
+            <div class="num tnum" id="kpiRecentlyChecked">0</div>
+            <div class="sub">Condition confirmed by an associate</div>
+          </div>
+        </div>
+
+        <div class="stack-v">
+          <div class="tablecard">
+            <div class="ttop"><div class="l"><h3>Search this store's watches</h3></div></div>
+            <div class="filterbar">
+              <div class="fin">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+                <input type="text" id="conditionFilter" placeholder="Search by brand, model, year or serial number…">
+              </div>
+              <span class="fcount" id="conditionFilterCount"></span>
+              <button class="fclear hidden" id="conditionFilterClear">Clear</button>
+            </div>
+            <div class="chipbar" id="conditionChips">
+              <button class="chip-f on" data-c="all">All</button>
+              <button class="chip-f" data-c="unconfirmed">Unconfirmed</button>
+              <button class="chip-f" data-c="mint">Mint</button>
+              <button class="chip-f" data-c="excellent">Excellent</button>
+              <button class="chip-f" data-c="good">Good</button>
+              <button class="chip-f" data-c="fair">Fair</button>
+              <button class="chip-f" data-c="damaged">Damaged</button>
+            </div>
+            <div class="tscroll">
+              <table>
+                <thead><tr>
+                  <th></th><th>Brand &amp; model</th><th>Serial</th><th>Year</th><th>Condition</th><th>Last checked</th><th>Action</th>
+                </tr></thead>
+                <tbody id="conditionBody"></tbody>
+              </table>
+            </div>
+          </div>
+          <div class="card">
+            <div class="hd"><h3>Recent condition updates</h3><span class="meta">This store</span></div>
+            <div class="bd">
+              <div class="activity" id="conditionLogFeed"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ HEAD OFFICE: STORE PERFORMANCE ============ -->
+      <section class="view" id="view-hq">
+        <div class="periodbar">
+          <div class="seg" id="hqGranSeg">
+            <button class="on" data-g="month">Month</button>
+            <button data-g="quarter">Quarter</button>
+            <button data-g="year">Year</button>
+          </div>
+          <select id="hqPeriodValue"></select>
+          <span class="pnote">Ranking and metrics below reflect the selected period</span>
+        </div>
+
+        <!-- ---- LIST STATE ---- -->
+        <div id="hqListView">
+          <div class="hq-summary kpis">
+            <div class="kpi es">
+              <div class="glyph g-gold"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 11l2 2 4-4"/></svg></div>
+              <div class="lab">Network requests</div>
+              <div class="num tnum" id="hqSumRequests">0</div>
+              <div class="sub">Across all stores this period</div>
+            </div>
+            <div class="kpi es">
+              <div class="glyph g-mint"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 6 9 17l-5-5"/></svg></div>
+              <div class="lab">Network approval rate</div>
+              <div class="num tnum" id="hqSumApproval">0%</div>
+              <div class="sub">Weighted across all stores</div>
+            </div>
+            <div class="kpi alert es">
+              <div class="glyph g-signal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m6 3 6-1 6 1 3 5-9 13L3 8z"/></svg></div>
+              <div class="lab">Damaged reports</div>
+              <div class="num tnum" id="hqSumDamaged">0</div>
+              <div class="sub">Network-wide this period</div>
+            </div>
+            <div class="kpi es">
+              <div class="glyph g-signal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg></div>
+              <div class="lab">Stores below target</div>
+              <div class="num tnum" id="hqSumBelow">0</div>
+              <div class="sub">Performance score under 60</div>
+            </div>
+          </div>
+
+          <div class="tablecard">
+            <div class="ttop"><div class="l"><h3>All stores</h3></div></div>
+            <div class="filterbar">
+              <div class="fin">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+                <input type="text" id="hqFilter" placeholder="Search by store, city or manager…">
+              </div>
+              <div class="chipbar" id="hqRegionChips" style="padding:0">
+                <button class="chip-f on" data-r="all">All</button>
+                <button class="chip-f" data-r="UK">UK</button>
+                <button class="chip-f" data-r="US">US</button>
+              </div>
+              <span class="fcount" id="hqFilterCount"></span>
+              <button class="fclear hidden" id="hqFilterClear">Clear</button>
+            </div>
+            <div class="tscroll">
+              <table>
+                <thead><tr>
+                  <th>Rank</th><th>Store</th><th>Manager</th><th>Requests</th><th>Approved</th><th>Rejected</th><th>Approval rate</th><th>Damaged</th><th>Performance</th><th>Action</th>
+                </tr></thead>
+                <tbody id="hqBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- ---- DETAIL STATE ---- -->
+        <div id="hqDetailView" class="hidden">
+          <div class="backlink" id="hqBack">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M15 18l-6-6 6-6"/></svg>
+            Back to all stores
+          </div>
+
+          <div class="card" style="margin-bottom:22px">
+            <div class="bd">
+              <div class="storeprofile" id="hqProfile"></div>
+            </div>
+          </div>
+
+          <div class="kpis" id="hqDetailKpis"></div>
+
+          <div class="grid-2">
+            <div class="card">
+              <div class="hd"><h3>Approvals vs rejections</h3><span class="meta" id="hqTrendMeta"></span></div>
+              <div class="bd">
+                <div class="chart-legend">
+                  <div class="cl-item"><span class="cl-sw" style="background:var(--mint)"></span>Approved</div>
+                  <div class="cl-item"><span class="cl-sw" style="background:var(--signal)"></span>Rejected</div>
+                </div>
+                <div class="bars" id="hqTrendBars"></div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="hd"><h3>Decline reasons</h3><span class="meta">This period</span></div>
+              <div class="bd">
+                <div class="donut-wrap">
+                  <svg viewBox="0 0 42 42" id="hqDonut" style="transform:rotate(-90deg)"></svg>
+                  <div class="legend" id="hqDonutLeg"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid-3">
+            <div class="card">
+              <div class="hd"><h3>Reallocations</h3></div>
+              <div class="bd"><div class="hbars" id="hqRealloc"></div></div>
+            </div>
+            <div class="card">
+              <div class="hd"><h3>Condition register health</h3></div>
+              <div class="bd"><div class="stockrow" id="hqCondHealth"></div></div>
+            </div>
+            <div class="card">
+              <div class="hd"><h3>Service level</h3></div>
+              <div class="bd"><div class="hbars" id="hqService"></div></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</div>
+
+<div class="scrim" id="modalScrim">
+  <!-- DECLINE MODAL -->
+  <div class="modal" id="declineModal">
+    <div class="hd">
+      <h2>Decline allocation request</h2>
+      <button class="close" id="declineClose"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+    </div>
+    <div class="bd">
+      <div class="prodrow" id="declineProdRow"></div>
+      <div class="field-grp" style="margin-top:16px">
+        <label>Reason for declining</label>
+        <select id="declineReason">
+          <option value="stock">Low / insufficient stock</option>
+          <option value="condition">Product condition issue</option>
+          <option value="reserved">Customer already interested in this piece</option>
+          <option value="incentive">Impact on staff sales incentive</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+      <div class="field-grp" id="declineNoteGrp">
+        <label>Reason &amp; comments for the order desk (required)</label>
+        <textarea id="declineNote" placeholder="e.g. Case has light desk marks, not suitable to send out unseen"></textarea>
+        <span class="errmsg">A comment is required whenever stock is rejected.</span>
+      </div>
+      <div id="declineAiPanel"></div>
+      <div id="declineRegisterSync"></div>
+      <div class="insbanner" style="margin:4px 0 0;background-color:rgba(150,51,44,.05);border-image:none">
+        <div class="ic" style="background:var(--signal)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 8 12 13 3 8M3 8l9-5 9 5v8l-9 5-9-5z"/></svg></div>
+        <div class="tx"><b>On confirm:</b> the central Ecommerce team is notified automatically and this line is reallocated to the next best store — no manual email required.</div>
+      </div>
+    </div>
+    <div class="ft">
+      <button class="btn btn-signal" id="declineConfirm">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        Confirm decline
+      </button>
+      <button class="btn btn-ghost" id="declineCancel">Cancel</button>
+    </div>
+  </div>
+
+  <!-- ACCEPT MODAL -->
+  <div class="modal hidden" id="acceptModal">
+    <div class="hd">
+      <h2>Accept &amp; choose fulfilment</h2>
+      <button class="close" id="acceptClose"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+    </div>
+    <div class="bd">
+      <div class="prodrow" id="acceptProdRow"></div>
+      <div id="acceptConditionWarning"></div>
+      <div class="field-grp" style="margin-top:16px" id="serialGrp">
+        <label>Serial number (required at approval)</label>
+        <div class="serialrow">
+          <input type="text" id="serialInput" placeholder="e.g. 8V2 041 226">
+          <button class="btn btn-ghost sm" id="serialScan" type="button">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="6" width="18" height="12" rx="1"/><path d="M7 6v12M11 6v12M15 6v12"/></svg>
+            Scan
+          </button>
+        </div>
+        <span class="errmsg">Capture the serial number before approving this piece.</span>
+      </div>
+      <div class="field-grp">
+        <label>How will the customer receive this piece?</label>
+        <div class="radiorow">
+          <label class="radiocard sel">
+            <input type="radio" name="pickup" value="here" checked>
+            <div><div class="t">Collect from this store</div><div class="d">Print paperwork and bag the piece for collection here</div></div>
+          </label>
+          <label class="radiocard">
+            <input type="radio" name="pickup" value="transfer">
+            <div><div class="t">Send to customer's local store</div><div class="d">Piece is transferred so the customer can collect closer to home</div></div>
+          </label>
+        </div>
+      </div>
+    </div>
+    <div class="ft">
+      <button class="btn btn-mint" id="acceptConfirm">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6 9 17l-5-5"/></svg>
+        Confirm acceptance
+      </button>
+      <button class="btn btn-ghost" id="acceptCancel">Cancel</button>
+    </div>
+  </div>
+
+  <!-- CONDITION UPDATE MODAL -->
+  <div class="modal hidden" id="conditionModal" style="width:620px">
+    <div class="hd">
+      <h2>Update condition</h2>
+      <button class="close" id="conditionClose"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+    </div>
+    <div class="bd">
+      <div class="watchdetail" id="conditionDetail"></div>
+
+      <div class="field-grp" style="margin-top:16px">
+        <label>New condition</label>
+        <select id="conditionNew">
+          <option value="mint">Mint</option>
+          <option value="excellent">Excellent</option>
+          <option value="good">Good</option>
+          <option value="fair">Fair</option>
+          <option value="damaged">Damaged</option>
+        </select>
+      </div>
+      <div class="field-grp">
+        <label>Reason for the update</label>
+        <select id="conditionReason">
+          <option value="receipt">Confirmed on receipt / stocktake</option>
+          <option value="handling">Handling mark / case scratch</option>
+          <option value="strap">Strap or bracelet wear</option>
+          <option value="movement">Movement fault found</option>
+          <option value="water">Water / moisture exposure</option>
+          <option value="return">Customer return</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+      <div class="field-grp" id="conditionNoteGrp">
+        <label>Comments (required)</label>
+        <textarea id="conditionNote" placeholder="e.g. Light scuff found on caseback during monthly stocktake"></textarea>
+        <span class="errmsg">Add a short comment explaining this condition change.</span>
+      </div>
+      <div class="field-grp hidden" id="damageDateGrp">
+        <label>Date the damage occurred</label>
+        <input type="date" id="damageDate">
+        <span class="errmsg">Enter the date this damage occurred or was discovered.</span>
+      </div>
+      <div class="field-grp">
+        <label>Attachments (optional)</label>
+        <div class="attach-zone" id="attachZone">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>
+          <div class="t">Add a photo or incident report</div>
+          <div class="d">JPG, PNG or PDF — click to choose files</div>
+        </div>
+        <input type="file" id="attachInput" class="hidden" multiple accept="image/*,.pdf">
+        <div class="attachlist" id="attachList"></div>
+      </div>
+    </div>
+    <div class="ft">
+      <button class="btn btn-gold" id="conditionConfirm">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6 9 17l-5-5"/></svg>
+        Save condition update
+      </button>
+      <button class="btn btn-ghost" id="conditionCancel">Cancel</button>
+    </div>
+  </div>
+
+  <!-- CONDITION BLOCK MODAL -->
+  <div class="modal hidden" id="blockModal" style="width:480px;text-align:center">
+    <div class="hd" style="justify-content:flex-end">
+      <button class="close" id="blockClose"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+    </div>
+    <div class="bd" style="padding-top:0">
+      <div class="block-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg></div>
+      <h2 style="margin-bottom:8px">This store can't fulfil this piece</h2>
+      <div id="blockDetail" style="font-size:13px;color:var(--txt-2);line-height:1.6"></div>
+    </div>
+    <div class="ft" style="justify-content:center">
+      <button class="btn btn-signal" id="blockDeclineBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        Decline this line
+      </button>
+      <button class="btn btn-ghost" id="blockCancel">Cancel</button>
+    </div>
+  </div>
+
+  <!-- AI SUGGEST MODAL -->
+  <div class="modal hidden" id="suggestModal" style="width:640px">
+    <div class="hd">
+      <h2>Suggest an alternative</h2>
+      <button class="close" id="suggestClose"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+    </div>
+    <div class="bd">
+      <div class="prodrow" id="suggestProdRow"></div>
+      <p style="font-size:12.5px;color:var(--txt-3);margin:14px 0 4px">Matched by movement, case size and price band. Show these to the customer while they're still with you — if one lands, offer it in place of declining outright.</p>
+      <div id="suggestList" style="margin-top:10px"></div>
+    </div>
+    <div class="ft">
+      <button class="btn btn-ghost" id="suggestCancel">Close</button>
+    </div>
+  </div>
+</div>
+<div class="toasts" id="toasts"></div>
+
+<script>
+/* ================= NAVIGATION ================= */
+let currentMkt='UK';
+const TERMS={
+  UK:{
+    queueLabel:'Allocation Queue', dispatchLabel:'Pack & Dispatch',
+    pageTitles:{overview:'Overview',queue:'Allocation Queue',tracker:'Order Tracker',dispatch:'Pack & Dispatch',transfers:'Store Transfers',payment:'Payment Clearance',condition:'Condition Register',hq:'Store Performance'},
+    footChip:' L032 · London — Regent St online', storePick:'L032 · London — Regent St',
+    queueNote:"<b>UK process:</b> the receiving store confirms availability and condition directly, then approves or rejects each line — this replaces the manual email confirmation previously sent by the central Ecommerce team.",
+    dispatchNote:"<b>UK process:</b> this store packs the piece with its paperwork and dispatches it directly — either to the counter for collection or by courier to the transfer store."
+  },
+  US:{
+    queueLabel:'Showroom Fulfillment', dispatchLabel:'Pack & Ship',
+    pageTitles:{overview:'Overview',queue:'Showroom Fulfillment',tracker:'Order Tracker',dispatch:'Pack & Ship',transfers:'Showroom Transfers',payment:'Payment Clearance',condition:'Condition Register',hq:'Store Performance'},
+    footChip:' #210 · NY — Fifth Ave online', storePick:'#210 · New York — Fifth Ave',
+    queueNote:"<b>US process:</b> the showroom confirms availability and condition, then approves or rejects each line for Showroom Fulfillment — no manual email round-trip with the Ecommerce desk.",
+    dispatchNote:"<b>US process:</b> once approved, packing and carrier hand-off is completed by the regional Fulfillment Center — the showroom's role ends at approval and serial capture."
+  }
+};
+function applyMarket(mkt){
+  currentMkt=mkt;const t=TERMS[mkt];
+  document.querySelectorAll('#marketSwitch button').forEach(b=>b.classList.toggle('on',b.dataset.mkt===mkt));
+  document.getElementById('navQueue').querySelector('.nav-label').textContent=t.queueLabel;
+  document.getElementById('navQueue').dataset.label=t.queueLabel;
+  document.getElementById('navDispatch').querySelector('.nav-label').textContent=t.dispatchLabel;
+  document.getElementById('navDispatch').dataset.label=t.dispatchLabel;
+  document.getElementById('footChip').textContent=t.footChip;
+  document.getElementById('storePick').firstChild.textContent=t.storePick+'\n            ';
+  document.getElementById('queueMarketNote').lastElementChild.innerHTML=t.queueNote;
+  document.getElementById('dispatchMarketNote').lastElementChild.innerHTML=t.dispatchNote;
+  const view=document.querySelector('.nav button.on')?.dataset.view||'overview';
+  document.getElementById('pageTitle').textContent=t.pageTitles[view]||t.pageTitles.overview;
+}
+document.querySelectorAll('#marketSwitch button').forEach(b=>b.addEventListener('click',()=>applyMarket(b.dataset.mkt)));
+
+function go(view){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('on'));
+  document.getElementById('view-'+view).classList.add('on');
+  document.querySelectorAll('.nav button[data-view]').forEach(b=>b.classList.toggle('on',b.dataset.view===view));
+  document.getElementById('pageTitle').textContent=TERMS[currentMkt].pageTitles[view]||view;
+}
+document.querySelectorAll('.nav button[data-view]').forEach(b=>b.addEventListener('click',()=>go(b.dataset.view)));
+
+/* ================= TOAST ================= */
+function toast(msg){
+  const el=document.createElement('div');el.className='toast';
+  el.innerHTML=`<span class="ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6 9 17l-5-5"/></svg></span>${msg}`;
+  document.getElementById('toasts').appendChild(el);
+  setTimeout(()=>{el.style.opacity='0';el.style.transform='translateY(6px)';el.style.transition='.3s';setTimeout(()=>el.remove(),320);},2600);
+}
+
+/* ================= ANIMATED COUNTS ================= */
+function animateCounts(){
+  document.querySelectorAll('.num[data-count]').forEach(el=>{
+    const target=+el.dataset.count;let cur=0;
+    const step=Math.max(1,Math.round(target/30));
+    const t=setInterval(()=>{cur+=step;if(cur>=target){cur=target;clearInterval(t);}el.textContent=cur;},18);
+  });
+}
+
+/* ================= DATA ================= */
+const REGIONS=[
+  {l:'London',v:18,c:'linear-gradient(90deg,#D8B24A,#8A6A22)'},
+  {l:'Manchester',v:9,c:'linear-gradient(90deg,#D8B24A,#8A6A22)'},
+  {l:'Birmingham',v:7,c:'linear-gradient(90deg,#D8B24A,#8A6A22)'},
+  {l:'Leeds',v:5,c:'linear-gradient(90deg,#D8B24A,#8A6A22)'},
+  {l:'Glasgow',v:4,c:'linear-gradient(90deg,#D8B24A,#8A6A22)'},
+];
+const VIP_ORDERS=[
+  {desc:"SO-48219 · Patek Philippe Nautilus 5711 — R. Okonkwo",stock:92},
+  {desc:"SO-48231 · Rolex Daytona 126500LN — H. Marsh",stock:65},
+  {desc:"SO-48244 · Audemars Piguet Royal Oak — S. Lindqvist",stock:38},
+  {desc:"SO-48255 · Omega Speedmaster Pro — T. Aoyama",stock:20},
+];
+const PAY_MIX=[
+  {l:'Card',v:58,c:'#A9812E'},
+  {l:'PayPal',v:19,c:'#3F6B4F'},
+  {l:'Bank transfer',v:14,c:'#8A6A22'},
+  {l:'Affirm / finance',v:9,c:'#C9BBA0'},
+];
+const DECLINE_REASONS=[
+  {l:'Low stock',v:4,c:'#A9812E'},
+  {l:'Condition issue',v:3,c:'#96332C'},
+  {l:'Customer reserved',v:5,c:'#8A6A22'},
+  {l:'Staff incentive',v:2,c:'#C9BBA0'},
+  {l:'Other',v:1,c:'#3F6B4F'},
+];
+const ALTS={
+  'Rolex Datejust 41 · 126334':[
+    {n:'Rolex Datejust 41 · 126300',ref:'Store L011 · Manchester',score:96,price:'£9,700',note:'41mm steel & white gold, fluted bezel — closest match'},
+    {n:'Rolex Oyster Perpetual 41 · 124300',ref:'Store L004 · Birmingham',score:88,price:'£6,150',note:'41mm steel, smooth bezel, similar dial colour — lower price band'},
+    {n:'Rolex Datejust 36 · 126200',ref:'This store · in stock now',score:81,price:'£8,300',note:'36mm steel, same family — no transfer needed'},
+  ],
+  'Omega Seamaster 300M · 210.30.42.20.01.001':[
+    {n:'Omega Seamaster Diver 300M · 210.22.42.20.01.001',ref:'Store L009 · Leeds',score:93,price:'£5,300',note:'42mm steel, ceramic bezel, same dial blue — closest match'},
+    {n:'Omega Seamaster Aqua Terra · 220.10.41.21.03.001',ref:'This store · in stock now',score:79,price:'£4,950',note:'41mm steel, dressier case — no transfer needed'},
+  ],
+  'Breitling Navitimer · AB0121211C1A1':[
+    {n:'Breitling Navitimer B01 · AB0138211C1P2',ref:'Store L011 · Manchester',score:90,price:'£8,900',note:'41mm chronograph, same slide-rule bezel — closest match'},
+    {n:'Breitling Super AVI · AB2010161C1X1',ref:'This store · in stock now',score:77,price:'£4,400',note:'42mm chronograph, similar pilot styling — no transfer needed'},
+  ],
+  'Rolex Submariner Date · 126610LN':[
+    {n:'Rolex Submariner Date · 126610LV',ref:'Store L004 · Birmingham',score:94,price:'£11,200',note:'41mm steel, green bezel variant — closest match'},
+    {n:'Tudor Black Bay 58 · 79030B',ref:'This store · in stock now',score:82,price:'£3,150',note:'39mm steel diver, same brand family — no transfer needed'},
+  ],
+  'default':[
+    {n:'Nearest equivalent by movement, case size & price',ref:'Checking network stock…',score:74,price:'—',note:'AI is still matching this piece'},
+  ]
+};
+function aiAlternativesFor(q){
+  const unavailable=(q.stock===0)||conditionFlagFor(q).status==='blocked';
+  if(!unavailable)return null;
+  const key=q.item+' · '+q.ref;
+  return ALTS[key]||ALTS.default;
+}
+let QID=100;
+function mkq(order,item,ref,customer,vip,stock,condition,timeLeft,tab){
+  return {id:QID++,order,item,ref,customer,vip,stock,condition,timeLeft,tab,status:tab==='accepted'?'accepted':tab==='declined'?'declined':'open'};
+}
+let QUEUE=[
+  mkq('SO-48261','Rolex Datejust 41','126334','A. Whitfield',true,1,'Excellent','1h 40m','new'),
+  mkq('SO-48262','Tudor Black Bay 58','79030B','J. Adeyemi',false,2,'Excellent','3h 05m','new'),
+  mkq('SO-48263','Omega Seamaster 300M','210.30.42.20.01.001','C. Bergström',false,0,'—','40m','soon'),
+  mkq('SO-48264','TAG Heuer Carrera','CBK2113','M. Doyle',false,3,'Good — minor scuff','3h 50m','new'),
+  mkq('SO-48265','Cartier Santos','WSSA0018','P. Nkemelu',true,1,'Excellent','25m','soon'),
+  mkq('SO-48266','Breitling Navitimer','AB0121211C1A1',"L. O'Farrell",false,1,'Excellent','2h 15m','new'),
+  mkq('SO-48267','Rolex Submariner Date','126610LN','K. Iversen',true,0,'—','15m','soon'),
+  mkq('SO-48268','Grand Seiko SBGA211','SBGA211','R. Costa',false,2,'Excellent','3h 20m','new'),
+  mkq('SO-48269','Longines Spirit','L3.810.4','D. Marchetti',false,1,'Good — box worn','1h 05m','soon'),
+  mkq('SO-48270','IWC Pilot Mark XX','IW328201','F. Nakashima',false,1,'Excellent','3h 45m','new'),
+  mkq('SO-48211','Panerai Luminor','PAM01312','E. Solberg',false,1,'Excellent','—','accepted'),
+  mkq('SO-48214','Tudor Pelagos 39','25610N','B. Kowalczyk',false,1,'Excellent','—','accepted'),
+  mkq('SO-48198','Rolex GMT-Master II','126710BLRO','W. Nyström',true,0,'—','—','declined'),
+  mkq('SO-48203','Zenith Chronomaster','03.3100.3600','G. Petit',false,0,'—','—','declined'),
+];
+for(let i=0;i<7;i++)QUEUE.push(mkq('SO-482'+(20+i),'Various piece','—','Customer '+(i+30),false,1,'Excellent','—','accepted'));
+for(let i=0;i<7;i++)QUEUE.push(mkq('SO-481'+(90+i),'Various piece','—','Customer '+(i+40),false,0,'—','—','declined'));
+
+/* ---- generated watch face illustrations (vector, no external images) ---- */
+function caseStyleFor(model){
+  const m=(model||'').toLowerCase();
+  if(/submariner|seamaster|superocean|black bay|pelagos|luminor|snowflake|aquaracer|diver/.test(m))return 'diver';
+  if(/carrera|navitimer|speedmaster|daytona|chronomaster/.test(m))return 'chrono';
+  if(/pilot|mark xx/.test(m))return 'pilot';
+  if(/tank|santos/.test(m))return 'rect';
+  if(/gmt/.test(m))return 'gmt';
+  return 'dress';
+}
+function hashStr(s){let h=0;for(let i=0;i<s.length;i++){h=(h*31+s.charCodeAt(i))>>>0;}return h;}
+const DIAL_PALETTE=['#0B2545','#141414','#1F3D2B','#5C2A1D','#ECEAE2','#7A1F2B','#12293D'];
+function watchIllustrationSvg(model,seedKey){
+  const style=caseStyleFor(model);
+  const h=hashStr(seedKey||model||'x');
+  const dial=DIAL_PALETTE[h%DIAL_PALETTE.length];
+  const gold=Math.floor(h/7)%3===0;
+  const gid='cg'+(h%99991);
+  const caseA=gold?'#F2E1AC':'#F5F6F8', caseB=gold?'#C9A227':'#C7CAD1', caseC=gold?'#8A6A22':'#868A93';
+  const hand=(dial==='#ECEAE2')?'#1B1912':'#F4F1E6';
+  const accent=gold?'#E9D7A0':'#DADDE2';
+  let extra='';
+  if(style==='diver'){
+    extra=`<circle cx="32" cy="32" r="27" fill="none" stroke="${accent}" stroke-width="2.4"/><path d="M32 7 34.4 11.2h-4.8z" fill="${gold?'#8A6A22':'#B23B33'}"/>`;
+  }else if(style==='chrono'){
+    extra=`<circle cx="24" cy="32" r="5.4" fill="none" stroke="${hand}" stroke-width="1" opacity=".7"/><circle cx="40" cy="32" r="5.4" fill="none" stroke="${hand}" stroke-width="1" opacity=".7"/>`;
+  }else if(style==='pilot'){
+    extra=`<rect x="56" y="28" width="6" height="8" rx="1.6" fill="url(#${gid})" stroke="${caseC}" stroke-width="0.6"/>`;
+  }else if(style==='gmt'){
+    extra=`<path d="M32 5 A27 27 0 0 1 55 18" fill="none" stroke="${gold?'#8A6A22':'#B23B33'}" stroke-width="5" stroke-linecap="round"/>`;
+  }
+  const caseShape=style==='rect'
+    ?`<rect x="12" y="6" width="40" height="52" rx="9" fill="url(#${gid})" stroke="${caseC}" stroke-width="1"/><rect x="17" y="11" width="30" height="42" rx="4" fill="${dial}"/>`
+    :`<circle cx="32" cy="32" r="29" fill="url(#${gid})" stroke="${caseC}" stroke-width="1"/><circle cx="32" cy="32" r="23" fill="${dial}"/>`;
+  const ticks=[0,90,180,270].map(a=>{
+    const r1=style==='rect'?15:19,r2=style==='rect'?12.5:16;
+    const rad=a*Math.PI/180;
+    const x1=(32+r1*Math.sin(rad)).toFixed(1),y1=(32-r1*Math.cos(rad)).toFixed(1);
+    const x2=(32+r2*Math.sin(rad)).toFixed(1),y2=(32-r2*Math.cos(rad)).toFixed(1);
+    return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${hand}" stroke-width="1.6" stroke-linecap="round" opacity=".85"/>`;
+  }).join('');
+  return `<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+    <defs><linearGradient id="${gid}" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="${caseA}"/><stop offset=".55" stop-color="${caseB}"/><stop offset="1" stop-color="${caseC}"/>
+    </linearGradient></defs>
+    ${caseShape}${ticks}${extra}
+    <path d="M32 32 32 18" stroke="${hand}" stroke-width="2.4" stroke-linecap="round"/>
+    <path d="M32 32 42 26" stroke="${hand}" stroke-width="2" stroke-linecap="round"/>
+    <circle cx="32" cy="32" r="2" fill="${hand}"/>
+    <path d="M14 14 A24 24 0 0 1 26 8" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" opacity=".35" fill="none"/>
+  </svg>`;
+}
+
+/* ---- link queue lines to the Condition Register ---- */
+const COND_RANK={damaged:0,fair:1,good:2,excellent:3,mint:4};
+function findWatchByRef(ref){
+  if(!ref||ref==='—')return null;
+  return WATCHES.find(w=>w.ref===ref)||null;
+}
+function parseAssumedCondition(text){
+  if(!text||text==='—')return null;
+  const first=text.split(' ')[0].toLowerCase().replace(/[^a-z]/g,'');
+  return COND_RANK.hasOwnProperty(first)?first:null;
+}
+function conditionFlagFor(q){
+  const w=findWatchByRef(q.ref);
+  if(!w)return {status:'none'};
+  if(w.condition==='unconfirmed')return {status:'unconfirmed',watch:w};
+  if(w.condition==='fair'||w.condition==='damaged')return {status:'blocked',watch:w};
+  const assumed=parseAssumedCondition(q.condition);
+  if(assumed&&COND_RANK[w.condition]<COND_RANK[assumed])return {status:'mismatch',watch:w};
+  return {status:'ok',watch:w};
+}
+function conditionRowBadge(flag){
+  if(flag.status==='blocked')return `<div class="regflag regflag-blocked"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M18 6 6 18M6 6l12 12"/></svg>Register: ${CONDITION_LABELS[flag.watch.condition]}</div>`;
+  if(flag.status==='unconfirmed')return `<div class="regflag regflag-warn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>Register: Unconfirmed</div>`;
+  if(flag.status==='mismatch')return `<div class="regflag regflag-warn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>Register: ${CONDITION_LABELS[flag.watch.condition]}</div>`;
+  return '';
+}
+function findLatestConditionLogFor(watch){
+  if(!watch)return null;
+  return CONDITION_LOG.find(l=>l.txt.includes(watch.serial))||null;
+}
+
+let DISPATCH=[
+  {order:'SO-48201',item:'Rolex Datejust 36',customer:'H. Sinclair',pickup:'here',steps:[false,false,false]},
+  {order:'SO-48204',item:'Omega De Ville',customer:'N. Fournier',pickup:'transfer',dest:'L009 · Leeds',steps:[true,false,false]},
+  {order:'SO-48207',item:'Tudor Black Bay GMT',customer:'A. Zimmer',pickup:'here',steps:[true,true,false]},
+  {order:'SO-48209',item:'Cartier Tank',customer:'Y. Osei',pickup:'here',steps:[false,false,false]},
+  {order:'SO-48212',item:'Breitling Superocean',customer:'J. Halvorsen',pickup:'transfer',dest:'L004 · Birmingham',steps:[false,false,false]},
+  {order:'SO-48215',item:'Grand Seiko Snowflake',customer:'P. Renard',pickup:'here',steps:[true,false,false]},
+];
+let DISPATCH_PACKED=[
+  {order:'SO-48180',item:'Rolex Sky-Dweller',customer:'M. Chatterjee',pickup:'here'},
+  {order:'SO-48182',item:'Omega Speedmaster',customer:'K. Lindberg',pickup:'transfer',dest:'L011 · Manchester'},
+  {order:'SO-48184',item:'Longines Master',customer:'S. Vidal',pickup:'here'},
+  {order:'SO-48186',item:'Tudor Ranger',customer:'D. Okafor',pickup:'here'},
+  {order:'SO-48189',item:'TAG Heuer Aquaracer',customer:'E. Malmberg',pickup:'transfer',dest:'L009 · Leeds'},
+  {order:'SO-48191',item:'IWC Portugieser',customer:'C. Adler',pickup:'here'},
+  {order:'SO-48193',item:'Panerai Submersible',customer:'R. Duarte',pickup:'here'},
+  {order:'SO-48195',item:'Zenith Chronomaster',customer:'F. Bianchi',pickup:'transfer',dest:'L004 · Birmingham'},
+];
+let TRANSFERS=[
+  {id:'TR-3381',order:'SO-48204',item:"Omega De Ville",customer:'N. Fournier',vip:false,from:'L032 · London',to:'L009 · Leeds',step:1,eta:'Tomorrow, by 12:00',reason:"Customer chose to collect at their local store — no condition or stock issue."},
+  {id:'TR-3376',order:'SO-48212',item:"Breitling Superocean",customer:'J. Halvorsen',vip:false,from:'L032 · London',to:'L004 · Birmingham',step:2,eta:'Today, by 18:00',reason:"Customer chose to collect at their local store — no condition or stock issue."},
+  {id:'TR-3369',order:'SO-48189',item:"TAG Heuer Aquaracer",customer:'E. Malmberg',vip:false,from:'L032 · London',to:'L009 · Leeds',step:3,eta:'Ready now',reason:"Customer chose to collect at their local store — no condition or stock issue."},
+  {id:'TR-3358',order:'SO-48182',item:"Omega Speedmaster",customer:'K. Lindberg',vip:true,from:'L032 · London',to:'L011 · Manchester',step:0,eta:'Awaiting courier',reason:"Reallocated after originating store rejected the line — VIP order, expedite."},
+  {id:'TR-3345',order:'SO-48195',item:"Zenith Chronomaster",customer:'F. Bianchi',vip:false,from:'L032 · London',to:'L004 · Birmingham',step:3,eta:'Collected',reason:"Customer chose to collect at their local store — no condition or stock issue."},
+];
+let PAYMENTS=[
+  {order:'SO-48261',customer:'A. Whitfield',vip:true,item:'Rolex Datejust 41',method:'Card',check:'required',status:'Held'},
+  {order:'SO-48264',customer:'M. Doyle',vip:false,item:'TAG Heuer Carrera',method:'PayPal',check:'bypass',status:'Cleared — PayPal'},
+  {order:'SO-48266',customer:"L. O'Farrell",vip:false,item:'Breitling Navitimer',method:'Bank transfer',check:'required',status:'Held'},
+  {order:'SO-48267',customer:'K. Iversen',vip:true,item:'Rolex Submariner Date',method:'Card',check:'required',status:'Held — VIP priority'},
+  {order:'SO-48270',customer:'F. Nakashima',vip:false,item:'IWC Pilot Mark XX',method:'Affirm',check:'required',status:'Held'},
+];
+
+/* ---- Order status board (traffic lights) ---- */
+let ORDER_TRACKER=[
+  {order:'SO-48261',customer:'A. Whitfield',item:'Rolex Datejust 41',approval:'amber',payment:'red',blocked:'red',ship:'grey'},
+  {order:'SO-48264',customer:'M. Doyle',item:'TAG Heuer Carrera',approval:'amber',payment:'green',blocked:'green',ship:'grey'},
+  {order:'SO-48211',customer:'E. Solberg',item:'Panerai Luminor',approval:'green',payment:'green',blocked:'green',ship:'amber'},
+  {order:'SO-48214',customer:'B. Kowalczyk',item:'Tudor Pelagos 39',approval:'green',payment:'green',blocked:'green',ship:'amber'},
+  {order:'SO-48198',customer:'W. Nyström',item:'Rolex GMT-Master II',approval:'red',payment:'grey',blocked:'grey',ship:'grey'},
+  {order:'SO-48204',customer:'N. Fournier',item:'Omega De Ville',approval:'green',payment:'green',blocked:'green',ship:'amber'},
+  {order:'SO-48182',customer:'K. Lindberg',item:'Omega Speedmaster',approval:'green',payment:'green',blocked:'green',ship:'amber'},
+  {order:'SO-48195',customer:'F. Bianchi',item:'Zenith Chronomaster',approval:'green',payment:'green',blocked:'green',ship:'green'},
+  {order:'SO-48267',customer:'K. Iversen',item:'Rolex Submariner Date',approval:'amber',payment:'red',blocked:'red',ship:'grey'},
+  {order:'SO-48270',customer:'F. Nakashima',item:'IWC Pilot Mark XX',approval:'amber',payment:'red',blocked:'red',ship:'grey'},
+];
+const TL_MAP={green:{cls:'p-rel',label:{approval:'Approved',payment:'Cleared',blocked:'Clear',ship:'Ready'}},
+  amber:{cls:'p-prog',label:{approval:'Pending',payment:'Pending',blocked:'Hold',ship:'Packing'}},
+  red:{cls:'p-sus',label:{approval:'Rejected',payment:'Blocked',blocked:'Blocked',ship:'Not ready'}},
+  grey:{cls:'p-cre',label:{approval:'—',payment:'—',blocked:'—',ship:'—'}}};
+function tlPill(kind,dim){const m=TL_MAP[kind];return `<span class="pill ${m.cls}"><span class="p-dot"></span>${m.label[dim]}</span>`;}
+let trackerFilterText='';
+function renderTracker(){
+  const body=document.getElementById('trackerBody');
+  const rows=ORDER_TRACKER.filter(o=>matchesFilter(trackerFilterText,[o.order,o.customer,o.item]));
+  document.getElementById('trackerFilterCount').textContent=trackerFilterText?`${rows.length} of ${ORDER_TRACKER.length} match`:'';
+  document.getElementById('trackerFilterClear').classList.toggle('hidden',!trackerFilterText);
+  if(!rows.length){body.innerHTML=`<tr><td colspan="7" style="color:var(--txt-3);padding:26px 14px">No orders match "${trackerFilterText}".</td></tr>`;return;}
+  body.innerHTML=rows.map(o=>`<tr>
+    <td class="mono">${o.order}</td>
+    <td>${o.customer}</td>
+    <td>${o.item}</td>
+    <td>${tlPill(o.approval,'approval')}</td>
+    <td>${tlPill(o.payment,'payment')}</td>
+    <td>${tlPill(o.blocked,'blocked')}</td>
+    <td>${tlPill(o.ship,'ship')}</td>
+  </tr>`).join('');
+}
+document.getElementById('trackerFilter').addEventListener('input',e=>{trackerFilterText=e.target.value.trim();renderTracker();});
+document.getElementById('trackerFilterClear').addEventListener('click',()=>{trackerFilterText='';document.getElementById('trackerFilter').value='';renderTracker();});
+
+/* ---- Approval activity feed & reallocation exceptions ---- */
+let ACTIVITY=[
+  {kind:'accept',tm:'09:41',txt:'<b>SO-48211</b> accepted · serial captured · E. Solberg'},
+  {kind:'decline',tm:'09:22',txt:'<b>SO-48198</b> declined — condition issue · W. Nyström'},
+  {kind:'realloc',tm:'09:23',txt:'<b>SO-48198</b> reallocated to L011 · Manchester'},
+  {kind:'accept',tm:'08:57',txt:'<b>SO-48214</b> accepted · serial captured · B. Kowalczyk'},
+];
+let reallocCount=1,exceptionCount=1;
+function renderActivity(){
+  document.getElementById('exReallocN').textContent=reallocCount;
+  document.getElementById('exOpenN').textContent=exceptionCount;
+  const dotColor={accept:'var(--mint)',decline:'var(--signal)',realloc:'var(--gold-deep)'};
+  const el=document.getElementById('activityFeed');
+  el.innerHTML=ACTIVITY.slice(0,10).map(a=>`<div class="ev">
+      <div class="dotwrap"><span class="adot" style="background:${dotColor[a.kind]}"></span></div>
+      <div class="txt">${a.txt}</div>
+      <div class="tm">${a.tm}</div>
+    </div>`).join('');
+}
+function pushActivity(kind,txt){
+  const now=new Date();const tm=now.getHours().toString().padStart(2,'0')+':'+now.getMinutes().toString().padStart(2,'0');
+  ACTIVITY.unshift({kind,tm,txt});
+  renderActivity();
+}
+const RELOCATION_CANDIDATES=[
+  {code:'L011',name:'Manchester'},{code:'L004',name:'Birmingham'},{code:'L009',name:'Leeds'},{code:'L017',name:'Glasgow'}
+];
+let reallocPointer=0;
+function nextReallocationStore(){
+  const s=RELOCATION_CANDIDATES[reallocPointer%RELOCATION_CANDIDATES.length];
+  reallocPointer++;return s;
+}
+
+/* ================= OVERVIEW CHARTS ================= */
+function buildBars(){
+  const el=document.getElementById('ovBars');el.innerHTML='';
+  const days=[['Mon',14,3],['Tue',18,2],['Wed',22,1],['Thu',17,4],['Fri',25,2],['Sat',12,1],['Sun',9,0]];
+  const max=Math.max(...days.map(d=>d[1]+d[2]));
+  days.forEach(([lab,acc,dec],i)=>{
+    const col=document.createElement('div');col.className='bar-col';
+    col.innerHTML=`<span class="bar-val">${acc+dec}</span>
+      <div class="bar-stack" style="height:0">
+        <div class="bar-seg" style="height:${dec/(acc+dec)*100}%;background:var(--signal)"></div>
+        <div class="bar-seg" style="height:${acc/(acc+dec)*100}%;background:var(--mint)"></div>
+      </div>
+      <span class="bar-lab">${lab}</span>`;
+    el.appendChild(col);
+    const h=(acc+dec)/max*100;
+    setTimeout(()=>col.querySelector('.bar-stack').style.height=h+'%',60+i*70);
+  });
+}
+function donut(svgId,legId,segs,center){
+  const total=segs.reduce((s,x)=>s+x.v,0);const svg=document.getElementById(svgId);svg.innerHTML='';let off=25;
+  segs.forEach(s=>{const pct=s.v/total*100;
+    const c=document.createElementNS('http://www.w3.org/2000/svg','circle');
+    c.setAttribute('cx','21');c.setAttribute('cy','21');c.setAttribute('r','15.915');c.setAttribute('fill','none');
+    c.setAttribute('stroke',s.c);c.setAttribute('stroke-width','6');c.setAttribute('stroke-dasharray',`${pct} ${100-pct}`);
+    c.setAttribute('stroke-dashoffset',off);c.style.transition='stroke-dasharray .8s';svg.appendChild(c);off-=pct;if(off<0)off+=100;});
+  if(center){
+    const t=document.createElementNS('http://www.w3.org/2000/svg','text');t.setAttribute('x','21');t.setAttribute('y','23');
+    t.setAttribute('text-anchor','middle');t.setAttribute('font-size','7');t.setAttribute('font-weight','700');
+    t.setAttribute('transform','rotate(90 21 21)');
+    t.setAttribute('fill','#1B1912');t.setAttribute('font-family','Fraunces');t.textContent=total;svg.appendChild(t);
+  }
+  const leg=document.getElementById(legId);leg.innerHTML='';
+  segs.forEach(s=>leg.innerHTML+=`<div class="row"><span class="sw" style="background:${s.c}"></span>${s.l}<span class="v">${s.v}</span></div>`);
+}
+function hbars(elId,rows,opts){
+  opts=opts||{};const el=document.getElementById(elId);el.innerHTML='';
+  const max=opts.max||Math.max(...rows.map(r=>r.v));
+  rows.forEach((r,i)=>{
+    const div=document.createElement('div');div.className='hbar';
+    div.innerHTML=`<span class="nm" title="${r.l}">${r.l}</span><div class="track"><div class="fill" style="background:${r.c||'linear-gradient(90deg,var(--gold),var(--gold-deep))'}"></div></div><span class="vv">${r.v}</span>`;
+    el.appendChild(div);
+    setTimeout(()=>div.querySelector('.fill').style.width=(r.v/max*100)+'%',60+i*70);
+  });
+}
+function renderVip(){
+  const el=document.getElementById('ovVip');el.innerHTML='';
+  VIP_ORDERS.forEach((r,i)=>{
+    const low=r.stock<50;
+    const it=document.createElement('div');it.className='it';
+    it.innerHTML=`<div class="top"><span class="d" title="${r.desc}">${r.desc}</span><span class="s">${r.stock}%</span></div><div class="track"><div class="fill" style="background:${low?'var(--signal)':'linear-gradient(90deg,var(--gold),var(--gold-deep))'}"></div></div>`;
+    el.appendChild(it);
+    setTimeout(()=>it.querySelector('.fill').style.width=r.stock+'%',80+i*70);
+  });
+}
+function renderOverview(){
+  buildBars();
+  donut('ovDonut','ovDonutLeg',DECLINE_REASONS,true);
+  hbars('ovRegions',REGIONS);
+  renderVip();
+  donut('ovPayDonut','ovPayLeg',PAY_MIX,true);
+  const openRows=QUEUE.filter(q=>q.tab==='new'||q.tab==='soon');
+  const withAlt=openRows.filter(q=>aiAlternativesFor(q));
+  document.getElementById('ovAiBannerText').innerHTML=withAlt.length
+    ?`<b>${withAlt.length} requested piece${withAlt.length>1?'s are':' is'} not available at this store as ordered.</b> AI has matched alternatives for ${withAlt.length>1?'all of them':'it'} — worth offering the customer before declining outright.`
+    :`<b>Nothing needs an alternative right now.</b> Every open request currently matches this store's stock and condition register.`;
+}
+document.getElementById('ovGo').addEventListener('click',()=>{
+  go('queue');
+  document.querySelectorAll('#queueTabs .tab').forEach(t=>t.classList.remove('on'));
+  document.querySelector('#queueTabs [data-tab=all]').classList.add('on');currentQTab='all';
+  queueAiOnly=true;
+  renderQueue();
+});
+
+/* ================= ALLOCATION QUEUE ================= */
+let currentQTab='new';
+let queueFilterText='';
+let queueAiOnly=false;
+function matchesFilter(text,fields){
+  if(!text)return true;
+  const q=text.toLowerCase();
+  return fields.some(f=>String(f||'').toLowerCase().includes(q));
+}
+function queueRowsByTabOnly(tab){
+  if(tab==='all')return QUEUE;
+  if(tab==='new')return QUEUE.filter(q=>q.tab==='new');
+  if(tab==='soon')return QUEUE.filter(q=>q.tab==='soon');
+  if(tab==='accepted')return QUEUE.filter(q=>q.status==='accepted');
+  if(tab==='declined')return QUEUE.filter(q=>q.status==='declined');
+  return QUEUE;
+}
+function queueRowsForTab(tab){
+  let rows=queueRowsByTabOnly(tab).filter(q=>matchesFilter(queueFilterText,[q.order,q.customer,q.item,q.ref]));
+  if(queueAiOnly)rows=rows.filter(q=>aiAlternativesFor(q));
+  return rows;
+}
+const QTITLES={new:'New requests',soon:'Responding soon',accepted:'Accepted',declined:'Declined',all:'All requests'};
+function renderQueue(){
+  document.getElementById('queueTitle').textContent=QTITLES[currentQTab];
+  const totalInTab=queueRowsByTabOnly(currentQTab).length;
+  const rows=queueRowsForTab(currentQTab);
+  const filterActive=queueFilterText||queueAiOnly;
+  document.getElementById('queueFilterCount').textContent=filterActive?`${rows.length} of ${totalInTab} match`:'';
+  document.getElementById('queueFilterClear').classList.toggle('hidden',!filterActive);
+  document.getElementById('queueAiToggle').classList.toggle('on',queueAiOnly);
+  const body=document.getElementById('queueBody');body.innerHTML='';
+  if(!rows.length){body.innerHTML=`<tr><td colspan="8" style="color:var(--txt-3);padding:26px 14px">${queueAiOnly?'No open requests currently have an AI-suggested alternative.':(queueFilterText?'No requests match "'+queueFilterText+'".':'Nothing here right now.')}</td></tr>`;return;}
+  rows.forEach(q=>{
+    const tr=document.createElement('tr');
+    const vipTag=q.vip?`<span class="vip"><svg viewBox="0 0 24 24" fill="currentColor"><path d="m12 2 3 6 6 1-4.5 4.5L17.5 20 12 17l-5.5 3 1-6.5L3 9l6-1z"/></svg>VIP</span>`:'';
+    const stockTxt=q.stock>0?`<span class="mono">${q.stock}</span> in stock`:`<span class="mono" style="color:var(--signal)">0</span> — none`;
+    let statusPill='';
+    if(q.status==='accepted')statusPill=`<span class="pill p-rel"><span class="p-dot"></span>Accepted</span>`;
+    else if(q.status==='declined')statusPill=`<span class="pill p-sus"><span class="p-dot"></span>Declined</span>`;
+    else if(q.tab==='soon')statusPill=`<span class="pill p-sus"><span class="p-dot"></span>Responding soon</span>`;
+    else statusPill=`<span class="pill p-prog"><span class="p-dot"></span>Open</span>`;
+    const flag=conditionFlagFor(q);
+    const alt=aiAlternativesFor(q);
+    if(alt)tr.classList.add('ai-row');
+    let actionCell='';
+    if(q.status==='open'||q.tab==='new'||q.tab==='soon'){
+      actionCell=`<button class="btn btn-mint sm act-accept" data-id="${q.id}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M20 6 9 17l-5-5"/></svg>Accept</button>
+        <button class="btn btn-ghost sm act-decline" data-id="${q.id}" style="margin-left:6px">Decline</button>`;
+      if(alt){
+        actionCell+=`<button class="btn btn-ai sm act-suggest" data-id="${q.id}" style="margin-left:6px">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2a5 5 0 0 0-5 5c0 2 1 3 1.5 4.5S9 15 9 16h6c0-1 .5-2.5 1-4S20 9 20 7a5 5 0 0 0-5-5"/></svg>
+          Suggest (${alt.length})</button>`;
+      }
+    }else{
+      actionCell=`<span class="linkbtn muted">Decision recorded</span>`;
+    }
+    const unavailTag=(q.stock===0)?`<div class="unavail-tag">Not available at this store</div>`:'';
+    tr.innerHTML=`<td class="mono">${q.order}</td>
+      <td><b>${q.item}</b> <span class="muted-c" style="font-size:11.5px">${q.ref!=='—'?'· '+q.ref:''}</span>${unavailTag}</td>
+      <td>${q.customer} ${vipTag}</td>
+      <td>${stockTxt}</td>
+      <td class="muted-c" style="white-space:normal">${q.condition}${conditionRowBadge(flag)}</td>
+      <td class="mono">${q.timeLeft}</td>
+      <td>${statusPill}</td>
+      <td style="white-space:nowrap">${actionCell}</td>`;
+    body.appendChild(tr);
+  });
+  body.querySelectorAll('.act-accept').forEach(b=>b.addEventListener('click',()=>openAccept(+b.dataset.id)));
+  body.querySelectorAll('.act-decline').forEach(b=>b.addEventListener('click',()=>openDecline(+b.dataset.id)));
+  body.querySelectorAll('.act-suggest').forEach(b=>b.addEventListener('click',()=>openSuggest(+b.dataset.id)));
+}
+document.getElementById('queueTabs').addEventListener('click',e=>{
+  const b=e.target.closest('.tab');if(!b)return;
+  document.querySelectorAll('#queueTabs .tab').forEach(t=>t.classList.remove('on'));
+  b.classList.add('on');currentQTab=b.dataset.tab;renderQueue();
+});
+document.getElementById('queueGo').addEventListener('click',()=>{renderQueue();toast('Queue refreshed');});
+document.getElementById('queueFilter').addEventListener('input',e=>{queueFilterText=e.target.value.trim();renderQueue();});
+document.getElementById('queueFilterClear').addEventListener('click',()=>{queueFilterText='';queueAiOnly=false;document.getElementById('queueFilter').value='';renderQueue();});
+document.getElementById('queueAiToggle').addEventListener('click',()=>{queueAiOnly=!queueAiOnly;renderQueue();});
+
+
+/* ---- condition block modal ---- */
+let blockTarget=null;
+function openBlock(q,watch){
+  blockTarget=q;
+  const log=findLatestConditionLogFor(watch);
+  const logLine=log?log.txt.replace(/<[^>]+>/g,''):null;
+  document.getElementById('blockDetail').innerHTML=`
+    <p style="margin-bottom:10px"><b>${q.item}</b> (${q.order}) is logged in the Condition Register as <b style="color:var(--signal)">${CONDITION_LABELS[watch.condition]}</b>, last checked ${watch.lastChecked||'—'}.</p>
+    ${logLine?`<p style="font-size:12px;color:var(--txt-3);margin-bottom:10px">"${logLine}"</p>`:''}
+    <p>This store can't supply the piece the customer ordered. Decline the line so it can be reallocated to a store that can.</p>`;
+  showModal('blockModal');
+}
+document.getElementById('blockClose').addEventListener('click',closeModals);
+document.getElementById('blockCancel').addEventListener('click',closeModals);
+document.getElementById('blockDeclineBtn').addEventListener('click',()=>{
+  if(!blockTarget)return;
+  openDecline(blockTarget.id,'condition');
+});
+
+/* ---- AI suggest-to-customer modal ---- */
+let suggestTarget=null;
+function openSuggest(id){
+  suggestTarget=QUEUE.find(q=>q.id===id);if(!suggestTarget)return;
+  const alt=aiAlternativesFor(suggestTarget);if(!alt)return;
+  const why=suggestTarget.stock===0?'Not available at this store right now':'Flagged in the Condition Register — can\'t be sold as ordered';
+  document.getElementById('suggestProdRow').innerHTML=`
+    <div class="swatch">${watchIllustrationSvg(suggestTarget.item,suggestTarget.order)}</div>
+    <div class="info"><b>${suggestTarget.item}</b><span>${suggestTarget.order} · ${suggestTarget.customer}${suggestTarget.vip?' · VIP':''}</span></div>
+    <div class="unavail-tag" style="margin-left:auto">${why}</div>`;
+  document.getElementById('suggestList').innerHTML=alt.map((a,i)=>`<div class="altcard">
+      <div class="swatch">${watchIllustrationSvg(a.n,a.n+suggestTarget.order+i)}</div>
+      <div class="info"><b>${a.n}</b><span>${a.ref}</span><div class="altmeta">${a.note}</div></div>
+      <div class="altright">
+        <span class="altscore">${a.score}% match</span>
+        <span class="altprice">${a.price}</span>
+        <button class="btn btn-ai sm act-offer" data-i="${i}">Offer this piece</button>
+      </div>
+    </div>`).join('');
+  document.getElementById('suggestList').querySelectorAll('.act-offer').forEach(b=>b.addEventListener('click',()=>{
+    const a=alt[+b.dataset.i];
+    const reason=suggestTarget.stock===0?'stock':'condition';
+    const note=`Customer shown alternative in store: ${a.n} (${a.ref}) — ${a.note}. Offering as substitute.`;
+    closeModals();
+    openDecline(suggestTarget.id,reason,note);
+  }));
+  showModal('suggestModal');
+}
+document.getElementById('suggestClose').addEventListener('click',closeModals);
+document.getElementById('suggestCancel').addEventListener('click',closeModals);
+
+/* ---- decline modal ---- */
+let declineTarget=null;
+let declineFlag={status:'none'};
+const ALL_MODALS=['declineModal','acceptModal','conditionModal','blockModal','suggestModal'];
+function showModal(id){
+  document.getElementById('modalScrim').classList.add('on');
+  ALL_MODALS.forEach(m=>document.getElementById(m).classList.toggle('hidden',m!==id));
+}
+function openDecline(id,presetReason,presetNote){
+  declineTarget=QUEUE.find(q=>q.id===id);if(!declineTarget)return;
+  declineFlag=conditionFlagFor(declineTarget);
+  document.getElementById('declineProdRow').innerHTML=`
+    <div class="swatch">${watchIllustrationSvg(declineTarget.item,declineTarget.order)}</div>
+    <div class="info"><b>${declineTarget.item}</b><span>${declineTarget.order} · ${declineTarget.customer}${declineTarget.vip?' · VIP':''}</span></div>`;
+  document.getElementById('declineNote').value=presetNote?presetNote:(presetReason==='condition'&&declineFlag.status==='blocked'
+    ?`Register shows this piece as ${CONDITION_LABELS[declineFlag.watch.condition]} (last checked ${declineFlag.watch.lastChecked||'—'}). Cannot fulfil in the condition ordered.`:'');
+  document.getElementById('declineReason').value=presetReason||'stock';
+  document.getElementById('declineNoteGrp').classList.remove('invalid');
+  renderDeclinePanels();
+  document.getElementById('declineReason').onchange=renderDeclinePanels;
+  showModal('declineModal');
+}
+function renderDeclinePanels(){
+  renderAiPanel();
+  renderDeclineRegisterSync();
+}
+function renderDeclineRegisterSync(){
+  const reason=document.getElementById('declineReason').value;
+  const el=document.getElementById('declineRegisterSync');
+  if(declineFlag.status==='blocked'){
+    el.innerHTML=`<div class="regsync"><span class="muted-c" style="font-size:12px">Already logged in the Condition Register as <b>${CONDITION_LABELS[declineFlag.watch.condition]}</b> on ${declineFlag.watch.lastChecked||'—'} — no further action needed there.</span></div>`;
+    return;
+  }
+  if(reason!=='condition'||!declineFlag.watch){el.innerHTML='';return;}
+  el.innerHTML=`<div class="regsync">
+    <label class="toggrow"><input type="checkbox" id="declineRegSyncToggle"><span>Also update the Condition Register for this piece</span></label>
+    <select id="declineRegSyncValue" class="hidden">
+      <option value="fair">Fair</option>
+      <option value="damaged">Damaged</option>
+    </select>
+  </div>`;
+  document.getElementById('declineRegSyncToggle').addEventListener('change',e=>{
+    document.getElementById('declineRegSyncValue').classList.toggle('hidden',!e.target.checked);
+  });
+}
+function renderAiPanel(){
+  const reason=document.getElementById('declineReason').value;
+  const panel=document.getElementById('declineAiPanel');
+  const list=aiAlternativesFor(declineTarget);
+  if((reason!=='stock'&&reason!=='reserved')||!list){panel.innerHTML='';return;}
+  panel.innerHTML=`<div class="insbanner" style="margin:4px 0 14px">
+      <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2a5 5 0 0 0-5 5c0 2 1 3 1.5 4.5S9 15 9 16h6c0-1 .5-2.5 1-4S20 9 20 7a5 5 0 0 0-5-5"/></svg></div>
+      <div class="tx"><b>AI suggested alternatives</b> — based on movement, case size and price band, worth offering the customer before declining outright.</div>
+    </div>
+    ${list.map((a,i)=>`<div class="altcard">
+      <div class="swatch">${watchIllustrationSvg(a.n,a.n+declineTarget.order+i)}</div>
+      <div class="info"><b>${a.n}</b><span>${a.ref}</span><div class="altmeta">${a.note}</div></div>
+      <div class="altright"><span class="altscore">${a.score}% match</span><span class="altprice">${a.price}</span></div>
+    </div>`).join('')}`;
+}
+function closeModals(){
+  document.getElementById('modalScrim').classList.remove('on');
+}
+document.getElementById('declineClose').addEventListener('click',closeModals);
+document.getElementById('declineCancel').addEventListener('click',closeModals);
+document.getElementById('declineConfirm').addEventListener('click',()=>{
+  if(!declineTarget)return;
+  const noteGrp=document.getElementById('declineNoteGrp');
+  const note=document.getElementById('declineNote').value.trim();
+  if(!note){noteGrp.classList.add('invalid');return;}
+  noteGrp.classList.remove('invalid');
+  const reasonLabel={stock:'low stock',condition:'condition issue',reserved:'customer already interested',incentive:'staff incentive impact',other:'other'}[document.getElementById('declineReason').value];
+  declineTarget.status='declined';declineTarget.tab='declined';
+  const dest=nextReallocationStore();
+
+  const syncToggle=document.getElementById('declineRegSyncToggle');
+  if(syncToggle&&syncToggle.checked&&declineFlag.watch){
+    const w=declineFlag.watch;const oldCond=w.condition;
+    const newCond=document.getElementById('declineRegSyncValue').value;
+    w.condition=newCond;
+    const today=new Date();
+    w.lastChecked=today.getDate().toString().padStart(2,'0')+' '+today.toLocaleString('en-GB',{month:'short'})+' '+today.getFullYear();
+    CONDITION_LOG.unshift({kind:'decline',tm:'Just now',
+      txt:`<b>${w.brand} ${w.model} · ${w.serial}</b> moved from ${CONDITION_LABELS[oldCond]} to ${CONDITION_LABELS[newCond]} — reported while declining ${declineTarget.order}: ${note}`});
+    renderConditionTable();renderConditionLog();
+  }
+
+  closeModals();renderQueue();renderTracker();
+
+  pushActivity('decline',`<b>${declineTarget.order}</b> declined — ${reasonLabel} · ${declineTarget.customer}`);
+  toast('Declined · '+declineTarget.order+' — reason logged');
+  setTimeout(()=>{
+    pushActivity('realloc',`<b>${declineTarget.order}</b> reallocated to ${dest.code} · ${dest.name}`);
+    toast('Reallocated · '+declineTarget.order+' → '+dest.code+' · '+dest.name);
+    reallocCount++;renderActivity();
+  },500);
+  setTimeout(()=>toast('Central Ecommerce team notified · '+declineTarget.order),1000);
+});
+
+/* ---- accept modal ---- */
+let acceptTarget=null;
+let acceptFlag={status:'none'};
+function openAccept(id){
+  acceptTarget=QUEUE.find(q=>q.id===id);if(!acceptTarget)return;
+  acceptFlag=conditionFlagFor(acceptTarget);
+  if(acceptFlag.status==='blocked'){
+    openBlock(acceptTarget,acceptFlag.watch);
+    return;
+  }
+  document.getElementById('acceptProdRow').innerHTML=`
+    <div class="swatch">${watchIllustrationSvg(acceptTarget.item,acceptTarget.order)}</div>
+    <div class="info"><b>${acceptTarget.item}</b><span>${acceptTarget.order} · ${acceptTarget.customer}${acceptTarget.vip?' · VIP':''}</span></div>`;
+  renderAcceptConditionWarning();
+  document.querySelectorAll('#acceptModal input[name=pickup]').forEach(r=>r.checked=(r.value==='here'));
+  document.querySelectorAll('#acceptModal .radiocard').forEach(c=>c.classList.toggle('sel',c.querySelector('input').value==='here'));
+  document.getElementById('serialInput').value='';
+  document.getElementById('serialGrp').classList.remove('invalid');
+  showModal('acceptModal');
+}
+function renderAcceptConditionWarning(){
+  const el=document.getElementById('acceptConditionWarning');
+  if(acceptFlag.status==='unconfirmed'){
+    el.innerHTML=`<div class="insbanner" style="margin:0 0 4px;background-color:rgba(169,129,46,.08)">
+      <div class="ic" style="background:var(--gold-deep)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg></div>
+      <div class="tx"><b>Condition Register warning:</b> this piece has never had its condition confirmed — it was received without a check. Physically inspect it before accepting.
+      <label class="ackrow" id="acceptAckRow"><input type="checkbox" id="acceptConditionAck"><span>I have physically checked this piece and confirm its condition</span></label></div>
+    </div>`;
+  }else if(acceptFlag.status==='mismatch'){
+    el.innerHTML=`<div class="insbanner" style="margin:0 0 4px;background-color:rgba(169,129,46,.08)">
+      <div class="ic" style="background:var(--gold-deep)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg></div>
+      <div class="tx"><b>Condition Register warning:</b> this piece is logged as <b>${CONDITION_LABELS[acceptFlag.watch.condition]}</b>, but the order was matched assuming ${acceptTarget.condition.split(' ')[0]} condition. Re-check before accepting.
+      <label class="ackrow" id="acceptAckRow"><input type="checkbox" id="acceptConditionAck"><span>I have physically checked this piece and confirm its condition</span></label></div>
+    </div>`;
+  }else{
+    el.innerHTML='';
+  }
+  const ack=document.getElementById('acceptConditionAck');
+  if(ack)ack.addEventListener('change',()=>{if(ack.checked)document.getElementById('acceptAckRow').classList.remove('invalid');});
+}
+document.querySelectorAll('#acceptModal .radiocard').forEach(card=>{
+  card.addEventListener('click',()=>{
+    document.querySelectorAll('#acceptModal .radiocard').forEach(c=>c.classList.remove('sel'));
+    card.classList.add('sel');card.querySelector('input').checked=true;
+  });
+});
+document.getElementById('serialScan').addEventListener('click',()=>{
+  const rnd='8V'+Math.floor(100000+Math.random()*899999);
+  document.getElementById('serialInput').value=rnd;
+  document.getElementById('serialGrp').classList.remove('invalid');
+});
+document.getElementById('acceptClose').addEventListener('click',closeModals);
+document.getElementById('acceptCancel').addEventListener('click',closeModals);
+document.getElementById('acceptConfirm').addEventListener('click',()=>{
+  if(!acceptTarget)return;
+  if(acceptFlag.status==='unconfirmed'||acceptFlag.status==='mismatch'){
+    const ackBox=document.getElementById('acceptConditionAck');
+    const ackRow=document.getElementById('acceptAckRow');
+    if(!ackBox||!ackBox.checked){if(ackRow)ackRow.classList.add('invalid');return;}
+  }
+  const serialGrp=document.getElementById('serialGrp');
+  const serial=document.getElementById('serialInput').value.trim();
+  if(!serial){serialGrp.classList.add('invalid');return;}
+  serialGrp.classList.remove('invalid');
+  const pickup=document.querySelector('#acceptModal input[name=pickup]:checked').value;
+  acceptTarget.status='accepted';acceptTarget.tab='accepted';
+  DISPATCH.push({order:acceptTarget.order,item:acceptTarget.item,customer:acceptTarget.customer,serial,pickup:pickup==='here'?'here':'transfer',dest:pickup==='here'?undefined:'Customer\'s local store',steps:[false,false,false]});
+
+  if((acceptFlag.status==='unconfirmed'||acceptFlag.status==='mismatch')&&acceptFlag.watch){
+    const w=acceptFlag.watch;const oldCond=w.condition;
+    const confirmed=parseAssumedCondition(acceptTarget.condition)||'excellent';
+    w.condition=confirmed;
+    const today=new Date();
+    w.lastChecked=today.getDate().toString().padStart(2,'0')+' '+today.toLocaleString('en-GB',{month:'short'})+' '+today.getFullYear();
+    CONDITION_LOG.unshift({kind:'accept',tm:'Just now',
+      txt:`<b>${w.brand} ${w.model} · ${w.serial}</b> moved from ${CONDITION_LABELS[oldCond]} to ${CONDITION_LABELS[confirmed]} — confirmed by associate while accepting ${acceptTarget.order}`});
+    renderConditionTable();renderConditionLog();
+  }
+
+  closeModals();renderQueue();renderDispatch();renderTracker();
+  pushActivity('accept',`<b>${acceptTarget.order}</b> accepted · serial ${serial} captured · ${acceptTarget.customer}`);
+  toast('Accepted · '+acceptTarget.order+' sent to Pack & Dispatch');
+});
+
+/* ================= PACK & DISPATCH ================= */
+let currentDTab='pending';
+const STEP_LABELS=['Paperwork printed','Item &amp; paperwork bagged','Sealed &amp; labelled'];
+function dispatchCard(d,idx){
+  const done=d.steps.filter(Boolean).length;
+  const pct=Math.round(done/3*100);
+  const destLine=d.pickup==='transfer'?`Send to ${d.dest||'customer\'s local store'}`:'Customer collects from this store';
+  return `<div class="card" style="margin-bottom:14px">
+    <div class="hd"><h3 style="font-size:14.5px">${d.item}</h3><span class="meta">${d.order} · ${d.customer}</span></div>
+    <div class="bd">
+      <div class="muted-c" style="font-size:12.5px;margin-bottom:4px">${destLine}</div>
+      ${d.serial?`<div class="muted-c" style="font-size:11.5px;margin-bottom:12px">Serial captured at approval: <b class="mono" style="color:var(--ink)">${d.serial}</b></div>`:'<div style="margin-bottom:12px"></div>'}
+      <div class="hbars" style="gap:9px">
+        ${STEP_LABELS.map((s,i)=>`<label style="display:flex;align-items:center;gap:10px;cursor:pointer">
+          <input type="checkbox" class="chk dispatch-step" data-idx="${idx}" data-step="${i}" ${d.steps[i]?'checked':''}>
+          <span style="font-size:13px;${d.steps[i]?'color:var(--txt-3);text-decoration:line-through':''}">${s}</span>
+        </label>`).join('')}
+      </div>
+      <div class="track" style="margin-top:12px"><div class="fill" style="width:${pct}%;background:linear-gradient(90deg,var(--gold),var(--gold-deep))"></div></div>
+    </div>
+  </div>`;
+}
+function renderDispatch(){
+  const list=document.getElementById('dispatchList');
+  document.getElementById('dispatchTitle').textContent=currentDTab==='pending'?'Ready to pack':'Packed';
+  if(currentDTab==='pending'){
+    list.innerHTML=DISPATCH.map((d,i)=>dispatchCard(d,i)).join('')||'<div style="color:var(--txt-3);padding:20px">Nothing waiting to be packed.</div>';
+    list.querySelectorAll('.dispatch-step').forEach(cb=>cb.addEventListener('change',()=>{
+      const idx=+cb.dataset.idx,step=+cb.dataset.step;
+      DISPATCH[idx].steps[step]=cb.checked;
+      if(DISPATCH[idx].steps.every(Boolean)){
+        const d=DISPATCH.splice(idx,1)[0];
+        DISPATCH_PACKED.unshift(d);
+        toast('Packed · '+d.order+' ready for '+(d.pickup==='here'?'collection':'transfer'));
+      }
+      renderDispatch();document.getElementById('dispatchTabs').querySelector('[data-tab=pending] .cnt').textContent=DISPATCH.length;
+      document.getElementById('dispatchTabs').querySelector('[data-tab=packed] .cnt').textContent=DISPATCH_PACKED.length;
+    }));
+  }else{
+    list.innerHTML=`<table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr>
+      <th style="text-align:left;font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--txt-3);padding:10px 8px;border-bottom:1px solid var(--line)">Order</th>
+      <th style="text-align:left;font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--txt-3);padding:10px 8px;border-bottom:1px solid var(--line)">Piece</th>
+      <th style="text-align:left;font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--txt-3);padding:10px 8px;border-bottom:1px solid var(--line)">Customer</th>
+      <th style="text-align:left;font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--txt-3);padding:10px 8px;border-bottom:1px solid var(--line)">Fulfilment</th>
+      </tr></thead><tbody>
+      ${DISPATCH_PACKED.map(d=>`<tr>
+        <td class="mono" style="padding:11px 8px;border-bottom:1px solid var(--line-soft)">${d.order}</td>
+        <td style="padding:11px 8px;border-bottom:1px solid var(--line-soft)">${d.item}</td>
+        <td style="padding:11px 8px;border-bottom:1px solid var(--line-soft)">${d.customer}</td>
+        <td style="padding:11px 8px;border-bottom:1px solid var(--line-soft)">${d.pickup==='here'?'<span class="pill p-rel">In store</span>':'<span class="pill p-prog">→ '+d.dest+'</span>'}</td>
+      </tr>`).join('')}
+      </tbody></table>`;
+  }
+}
+document.getElementById('dispatchTabs').addEventListener('click',e=>{
+  const b=e.target.closest('.tab');if(!b)return;
+  document.querySelectorAll('#dispatchTabs .tab').forEach(t=>t.classList.remove('on'));
+  b.classList.add('on');currentDTab=b.dataset.tab;renderDispatch();
+});
+
+/* ================= STORE TRANSFERS ================= */
+const TRANSFER_STEPS=['Packed','In transit','Arrived','Ready for collection'];
+function renderTransfers(){
+  const list=document.getElementById('transfersList');
+  list.innerHTML=TRANSFERS.map(t=>{
+    const vipTag=t.vip?`<span class="vip" style="margin-left:6px"><svg viewBox="0 0 24 24" fill="currentColor"><path d="m12 2 3 6 6 1-4.5 4.5L17.5 20 12 17l-5.5 3 1-6.5L3 9l6-1z"/></svg>VIP</span>`:'';
+    return `<div class="card" style="margin-bottom:14px">
+    <div class="hd"><h3 style="font-size:14.5px">${t.id} · ${t.item}</h3><span class="meta">${t.from} → ${t.to}</span></div>
+    <div class="bd">
+      <div class="rail">
+        ${TRANSFER_STEPS.map((s,i)=>`${i>0?`<div class="ln ${i<=t.step?'done':''}"></div>`:''}<div class="stp ${i<t.step?'done':i===t.step?'now':''}">
+          <div class="dotc">${i<t.step?'✓':i+1}</div><div class="lb">${s}</div></div>`).join('')}
+      </div>
+      <div class="muted-c" style="font-size:12.5px;margin-top:6px">ETA: ${t.eta}</div>
+      <div class="ctxblock">
+        <div class="kv"><span>Ecommerce order</span><b class="mono">${t.order}</b></div>
+        <div class="kv"><span>Customer</span><b>${t.customer}${vipTag}</b></div>
+        <div class="kv full"><span>Why this transfer is happening</span><b style="font-weight:500;font-size:12.5px">${t.reason}</b></div>
+      </div>
+    </div>
+  </div>`;}).join('');
+}
+
+/* ================= PAYMENT CLEARANCE ================= */
+let paymentFilterText='';
+function renderPayment(){
+  const body=document.getElementById('paymentBody');
+  const rows=PAYMENTS.filter(p=>matchesFilter(paymentFilterText,[p.order,p.customer,p.item]));
+  document.getElementById('paymentFilterCount').textContent=paymentFilterText?`${rows.length} of ${PAYMENTS.length} match`:'';
+  document.getElementById('paymentFilterClear').classList.toggle('hidden',!paymentFilterText);
+  if(!rows.length){body.innerHTML=`<tr><td colspan="7" style="color:var(--txt-3);padding:26px 14px">No orders match "${paymentFilterText}".</td></tr>`;body.querySelectorAll('.act-clear,.act-release').forEach(()=>{});return;}
+  body.innerHTML=rows.map((p)=>{
+    const vipTag=p.vip?`<span class="vip" style="margin-left:6px"><svg viewBox="0 0 24 24" fill="currentColor"><path d="m12 2 3 6 6 1-4.5 4.5L17.5 20 12 17l-5.5 3 1-6.5L3 9l6-1z"/></svg>VIP</span>`:'';
+    const checkPill=p.check==='bypass'?`<span class="pill p-rel"><span class="p-dot"></span>Self-cleared</span>`:`<span class="pill p-sus"><span class="p-dot"></span>Required</span>`;
+    const canRelease=p.check==='bypass'||p.status.includes('Cleared');
+    return `<tr>
+      <td class="mono">${p.order}</td>
+      <td>${p.customer}${vipTag}</td>
+      <td>${p.item}</td>
+      <td class="muted-c">${p.method}</td>
+      <td>${checkPill}</td>
+      <td class="muted-c">${p.status}</td>
+      <td>${canRelease?`<button class="btn btn-mint sm act-release" data-order="${p.order}">Release payment</button>`:`<button class="btn btn-ghost sm act-clear" data-order="${p.order}">Run fraud check</button>`}</td>
+    </tr>`;
+  }).join('');
+  body.querySelectorAll('.act-clear').forEach(b=>b.addEventListener('click',()=>{
+    const p=PAYMENTS.find(x=>x.order===b.dataset.order);if(!p)return;
+    p.status='Cleared — manual review';renderPayment();
+    toast('Fraud check cleared · '+p.order);
+  }));
+  body.querySelectorAll('.act-release').forEach(b=>b.addEventListener('click',()=>{
+    const idx=PAYMENTS.findIndex(x=>x.order===b.dataset.order);if(idx<0)return;
+    const p=PAYMENTS.splice(idx,1)[0];renderPayment();
+    toast('Payment released · '+p.order);
+  }));
+}
+document.getElementById('paymentFilter').addEventListener('input',e=>{paymentFilterText=e.target.value.trim();renderPayment();});
+document.getElementById('paymentFilterClear').addEventListener('click',()=>{paymentFilterText='';document.getElementById('paymentFilter').value='';renderPayment();});
+
+/* ================= CONDITION REGISTER ================= */
+let WATCHES=[
+  {id:'w1',brand:'Rolex',model:'Datejust 41',ref:'126334',serial:'8V2041226',year:2023,condition:'unconfirmed',lastChecked:null},
+  {id:'w2',brand:'Rolex',model:'Submariner Date',ref:'126610LN',serial:'7K1893410',year:2022,condition:'excellent',lastChecked:'14 Aug 2026'},
+  {id:'w3',brand:'Rolex',model:'GMT-Master II',ref:'126710BLRO',serial:'6H2205571',year:2021,condition:'fair',lastChecked:'02 Aug 2026'},
+  {id:'w4',brand:'Omega',model:'Seamaster 300M',ref:'210.30.42.20.01.001',serial:'OM4471029',year:2023,condition:'mint',lastChecked:'11 Aug 2026'},
+  {id:'w5',brand:'Omega',model:'Speedmaster Professional',ref:'310.30.42.50.01.001',serial:'OM3390214',year:2020,condition:'unconfirmed',lastChecked:null},
+  {id:'w6',brand:'Tudor',model:'Black Bay 58',ref:'79030B',serial:'TD8820193',year:2022,condition:'good',lastChecked:'09 Aug 2026'},
+  {id:'w7',brand:'Tudor',model:'Pelagos 39',ref:'25610N',serial:'TD1207744',year:2023,condition:'mint',lastChecked:'16 Aug 2026'},
+  {id:'w8',brand:'TAG Heuer',model:'Carrera',ref:'CBK2113',serial:'TH5502981',year:2021,condition:'good',lastChecked:'30 Jul 2026'},
+  {id:'w9',brand:'Cartier',model:'Santos',ref:'WSSA0018',serial:'CT9012287',year:2022,condition:'excellent',lastChecked:'12 Aug 2026'},
+  {id:'w10',brand:'Cartier',model:'Tank',ref:'WSTA0040',serial:'CT7761120',year:2019,condition:'unconfirmed',lastChecked:null},
+  {id:'w11',brand:'Breitling',model:'Navitimer',ref:'AB0121211C1A1',serial:'BR3345098',year:2020,condition:'damaged',lastChecked:'05 Aug 2026'},
+  {id:'w12',brand:'Grand Seiko',model:'SBGA211',ref:'SBGA211',serial:'GS0098213',year:2023,condition:'mint',lastChecked:'15 Aug 2026'},
+  {id:'w13',brand:'IWC',model:'Pilot Mark XX',ref:'IW328201',serial:'IW6620041',year:2022,condition:'excellent',lastChecked:'08 Aug 2026'},
+  {id:'w14',brand:'Longines',model:'Spirit',ref:'L3.810.4',serial:'LG2201938',year:2021,condition:'good',lastChecked:'22 Jul 2026'},
+  {id:'w15',brand:'Panerai',model:'Luminor',ref:'PAM01312',serial:'PN4471820',year:2020,condition:'unconfirmed',lastChecked:null},
+  {id:'w16',brand:'Zenith',model:'Chronomaster',ref:'03.3100.3600',serial:'ZN8802214',year:2019,condition:'excellent',lastChecked:'27 Jul 2026'},
+];
+const CONDITION_LABELS={unconfirmed:'Unconfirmed',mint:'Mint',excellent:'Excellent',good:'Good',fair:'Fair',damaged:'Damaged'};
+const CONDITION_PILLS={unconfirmed:'p-unconf',mint:'p-mint2',excellent:'p-mint2',good:'p-good',fair:'p-fair',damaged:'p-damaged'};
+function conditionPill(c){return `<span class="pill ${CONDITION_PILLS[c]}"><span class="p-dot"></span>${CONDITION_LABELS[c]}</span>`;}
+let CONDITION_LOG=[
+  {kind:'decline',tm:'Yesterday',txt:'<b>Rolex GMT-Master II · 6H2205571</b> moved to Fair — case scratch found during stocktake'},
+  {kind:'accept',tm:'5 days ago',txt:'<b>Breitling Navitimer · BR3345098</b> moved to Damaged — crystal cracked, incident reported'},
+];
+function renderConditionLog(){
+  const dotColor={accept:'var(--mint)',decline:'var(--signal)',realloc:'var(--gold-deep)'};
+  const el=document.getElementById('conditionLogFeed');
+  if(!CONDITION_LOG.length){el.innerHTML='<div style="color:var(--txt-3);font-size:12.5px">No updates logged yet.</div>';return;}
+  el.innerHTML=CONDITION_LOG.slice(0,10).map(a=>`<div class="ev">
+      <div class="dotwrap"><span class="adot" style="background:${dotColor[a.kind]||'var(--gold-deep)'}"></span></div>
+      <div class="txt">${a.txt}</div>
+      <div class="tm">${a.tm}</div>
+    </div>`).join('');
+}
+let conditionFilterText='';
+let conditionChip='all';
+function conditionRowsFiltered(){
+  return WATCHES.filter(w=>{
+    if(conditionChip!=='all'&&w.condition!==conditionChip)return false;
+    return matchesFilter(conditionFilterText,[w.brand,w.model,w.ref,w.serial,String(w.year)]);
+  });
+}
+function updateConditionKPIs(){
+  document.getElementById('kpiTotalWatches').textContent=WATCHES.length;
+  document.getElementById('kpiUnconfirmed').textContent=WATCHES.filter(w=>w.condition==='unconfirmed').length;
+  document.getElementById('kpiFairDamaged').textContent=WATCHES.filter(w=>w.condition==='fair'||w.condition==='damaged').length;
+  document.getElementById('kpiRecentlyChecked').textContent=WATCHES.filter(w=>w.lastChecked).length;
+}
+function renderConditionTable(){
+  updateConditionKPIs();
+  const rows=conditionRowsFiltered();
+  document.getElementById('conditionFilterCount').textContent=conditionFilterText?`${rows.length} of ${WATCHES.length} match`:'';
+  document.getElementById('conditionFilterClear').classList.toggle('hidden',!conditionFilterText);
+  const body=document.getElementById('conditionBody');
+  if(!rows.length){body.innerHTML=`<tr><td colspan="7" style="color:var(--txt-3);padding:26px 14px">No watches match your search.</td></tr>`;return;}
+  body.innerHTML=rows.map(w=>{
+    const excluded=(w.condition==='fair'||w.condition==='damaged');
+    return `<tr>
+      <td><div class="wthumb">${watchIllustrationSvg(w.brand+' '+w.model,w.serial)}</div></td>
+      <td><b>${w.brand} ${w.model}</b><div class="muted-c" style="font-size:11.5px">${w.ref}</div>${excluded?`<div class="excludedtag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M18 6 6 18M6 6l12 12"/></svg>Excluded from allocation</div>`:''}</td>
+      <td class="mono">${w.serial}</td>
+      <td class="muted-c">${w.year}</td>
+      <td>${conditionPill(w.condition)}</td>
+      <td class="muted-c">${w.lastChecked||'Never checked'}</td>
+      <td><button class="btn btn-ghost sm act-condition" data-id="${w.id}">Update condition</button></td>
+    </tr>`;
+  }).join('');
+  body.querySelectorAll('.act-condition').forEach(b=>b.addEventListener('click',()=>openCondition(b.dataset.id)));
+}
+document.getElementById('conditionFilter').addEventListener('input',e=>{conditionFilterText=e.target.value.trim();renderConditionTable();});
+document.getElementById('conditionFilterClear').addEventListener('click',()=>{conditionFilterText='';document.getElementById('conditionFilter').value='';renderConditionTable();});
+document.getElementById('conditionChips').addEventListener('click',e=>{
+  const b=e.target.closest('.chip-f');if(!b)return;
+  document.querySelectorAll('#conditionChips .chip-f').forEach(c=>c.classList.remove('on'));
+  b.classList.add('on');conditionChip=b.dataset.c;renderConditionTable();
+});
+
+/* ---- condition update modal ---- */
+let conditionTarget=null;
+let conditionAttachments=[];
+function openCondition(id){
+  conditionTarget=WATCHES.find(w=>w.id===id);if(!conditionTarget)return;
+  const w=conditionTarget;
+  document.getElementById('conditionDetail').innerHTML=`
+    <div class="img">${watchIllustrationSvg(w.brand+' '+w.model,w.serial)}</div>
+    <div class="meta">
+      <b>${w.brand} ${w.model}</b>
+      <div class="sub">Reference ${w.ref}</div>
+      <div class="kvrow">
+        <div><span>Serial</span><b class="mono">${w.serial}</b></div>
+        <div><span>Year</span><b>${w.year}</b></div>
+        <div><span>Current condition</span><b>${CONDITION_LABELS[w.condition]}</b></div>
+        <div><span>Last checked</span><b>${w.lastChecked||'Never checked'}</b></div>
+      </div>
+    </div>`;
+  document.getElementById('conditionNew').value=(w.condition==='unconfirmed')?'excellent':w.condition;
+  document.getElementById('conditionReason').value='receipt';
+  document.getElementById('conditionNote').value='';
+  document.getElementById('conditionNoteGrp').classList.remove('invalid');
+  document.getElementById('damageDate').value='';
+  document.getElementById('damageDateGrp').classList.add('hidden');
+  document.getElementById('damageDateGrp').classList.remove('invalid');
+  conditionAttachments=[];
+  renderAttachList();
+  toggleDamageDate();
+  showModal('conditionModal');
+}
+function toggleDamageDate(){
+  const v=document.getElementById('conditionNew').value;
+  document.getElementById('damageDateGrp').classList.toggle('hidden',!(v==='fair'||v==='damaged'));
+}
+document.getElementById('conditionNew').addEventListener('change',toggleDamageDate);
+function renderAttachList(){
+  const el=document.getElementById('attachList');
+  el.innerHTML=conditionAttachments.map((f,i)=>`<div class="af">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21.44 11.05 12.7 19.8a4.5 4.5 0 0 1-6.36-6.37L15 4.7a3 3 0 0 1 4.24 4.24L10.5 17.7a1.5 1.5 0 0 1-2.12-2.12l7.07-7.08"/></svg>
+      <span class="nm">${f}</span>
+      <span class="rm" data-i="${i}">✕</span>
+    </div>`).join('');
+  el.querySelectorAll('.rm').forEach(x=>x.addEventListener('click',()=>{conditionAttachments.splice(+x.dataset.i,1);renderAttachList();}));
+}
+document.getElementById('attachZone').addEventListener('click',()=>document.getElementById('attachInput').click());
+document.getElementById('attachInput').addEventListener('change',e=>{
+  Array.from(e.target.files).forEach(f=>conditionAttachments.push(f.name));
+  renderAttachList();e.target.value='';
+});
+document.getElementById('conditionClose').addEventListener('click',closeModals);
+document.getElementById('conditionCancel').addEventListener('click',closeModals);
+document.getElementById('conditionConfirm').addEventListener('click',()=>{
+  if(!conditionTarget)return;
+  const noteGrp=document.getElementById('conditionNoteGrp');
+  const note=document.getElementById('conditionNote').value.trim();
+  if(!note){noteGrp.classList.add('invalid');return;}
+  noteGrp.classList.remove('invalid');
+  const newCond=document.getElementById('conditionNew').value;
+  const needsDate=(newCond==='fair'||newCond==='damaged');
+  const dateGrp=document.getElementById('damageDateGrp');
+  const dmgDate=document.getElementById('damageDate').value;
+  if(needsDate&&!dmgDate){dateGrp.classList.add('invalid');return;}
+  dateGrp.classList.remove('invalid');
+
+  const oldCond=conditionTarget.condition;
+  conditionTarget.condition=newCond;
+  const today=new Date();
+  conditionTarget.lastChecked=today.getDate().toString().padStart(2,'0')+' '+today.toLocaleString('en-GB',{month:'short'})+' '+today.getFullYear();
+
+  const reasonLabel=document.getElementById('conditionReason').selectedOptions[0].text;
+  const attTxt=conditionAttachments.length?` · ${conditionAttachments.length} attachment${conditionAttachments.length>1?'s':''}`:'';
+  const dateTxt=needsDate?` · damage occurred ${dmgDate}`:'';
+  CONDITION_LOG.unshift({kind:(newCond==='fair'||newCond==='damaged')?'decline':'accept',tm:'Just now',
+    txt:`<b>${conditionTarget.brand} ${conditionTarget.model} · ${conditionTarget.serial}</b> moved from ${CONDITION_LABELS[oldCond]} to ${CONDITION_LABELS[newCond]} — ${reasonLabel}${dateTxt}${attTxt}`});
+  renderConditionLog();
+
+  closeModals();renderConditionTable();
+  toast('Condition updated · '+conditionTarget.brand+' '+conditionTarget.model+' → '+CONDITION_LABELS[newCond]);
+  if(needsDate){
+    setTimeout(()=>toast((conditionTarget.brand+' '+conditionTarget.model)+' excluded from allocation matching'),500);
+  }
+});
+
+/* ================= HEAD OFFICE: STORE PERFORMANCE ================= */
+let STORES=[
+  {code:'L032',name:'London — Regent St',country:'UK',city:'London',manager:'Priya Shah',email:'priya.shah@wos.example',phone:'+44 20 7946 0032',employees:22,opened:2014,address:'112 Regent Street, London W1B 5FE'},
+  {code:'L011',name:'Manchester',country:'UK',city:'Manchester',manager:'Daniel Foy',email:'daniel.foy@wos.example',phone:'+44 161 496 0011',employees:14,opened:2009,address:'44 King Street, Manchester M2 6DW'},
+  {code:'L004',name:'Birmingham',country:'UK',city:'Birmingham',manager:'Amara Okafor',email:'amara.okafor@wos.example',phone:'+44 121 643 0004',employees:12,opened:2007,address:'8 Bullring, Birmingham B5 4BU'},
+  {code:'L009',name:'Leeds',country:'UK',city:'Leeds',manager:'Sam Whitlock',email:'sam.whitlock@wos.example',phone:'+44 113 246 0009',employees:11,opened:2011,address:'21 Briggate, Leeds LS1 6ET'},
+  {code:'L017',name:'Glasgow',country:'UK',city:'Glasgow',manager:'Fiona Cairns',email:'fiona.cairns@wos.example',phone:'+44 141 204 0017',employees:9,opened:2016,address:'56 Buchanan Street, Glasgow G1 3JX'},
+  {code:'L021',name:'Edinburgh',country:'UK',city:'Edinburgh',manager:'Callum Reid',email:'callum.reid@wos.example',phone:'+44 131 225 0021',employees:8,opened:2018,address:'92 George Street, Edinburgh EH2 3DF'},
+  {code:'US210',name:'New York — Fifth Ave',country:'US',city:'New York',manager:'Marissa Cole',email:'marissa.cole@wos.example',phone:'+1 212 555 0210',employees:26,opened:2012,address:'645 Fifth Avenue, New York, NY 10022'},
+  {code:'US305',name:'Los Angeles — Rodeo Dr',country:'US',city:'Los Angeles',manager:'Trevor Nash',email:'trevor.nash@wos.example',phone:'+1 310 555 0305',employees:19,opened:2015,address:'332 N Rodeo Dr, Beverly Hills, CA 90210'},
+  {code:'US150',name:'Chicago — Michigan Ave',country:'US',city:'Chicago',manager:'Elena Vargas',email:'elena.vargas@wos.example',phone:'+1 312 555 0150',employees:15,opened:2017,address:'663 N Michigan Ave, Chicago, IL 60611'},
+];
+const PERIODS={
+  month:[{key:'2026-08',label:'Aug 2026'},{key:'2026-07',label:'Jul 2026'},{key:'2026-06',label:'Jun 2026'},{key:'2026-05',label:'May 2026'},{key:'2026-04',label:'Apr 2026'},{key:'2026-03',label:'Mar 2026'}],
+  quarter:[{key:'2026-Q3',label:'Q3 2026'},{key:'2026-Q2',label:'Q2 2026'},{key:'2026-Q1',label:'Q1 2026'},{key:'2025-Q4',label:'Q4 2025'}],
+  year:[{key:'2026',label:'2026'},{key:'2025',label:'2025'}]
+};
+let hqGran='month',hqPeriod=PERIODS.month[0].key,hqFilterText='',hqRegion='all',hqCurrentStore=null;
+
+function hqMetrics(storeCode,periodKey){
+  const key=storeCode+'|'+periodKey;
+  const h=hashStr(key);
+  const h2=hashStr(key+'|b'),h3=hashStr(key+'|c'),h4=hashStr(key+'|d'),h5=hashStr(key+'|e'),h6=hashStr(key+'|f'),h7=hashStr(key+'|g'),h8=hashStr(key+'|h');
+  const requests=60+(h%140);
+  const approvalRate=+(0.62+(h2%30)/100).toFixed(2);
+  const approved=Math.round(requests*approvalRate);
+  const rejected=requests-approved;
+  const damaged=Math.max(0,Math.round(rejected*(0.15+(h3%25)/100)));
+  const avgResponseMins=25+(h4%95);
+  const reallocSent=Math.round(rejected*(0.4+(h5%40)/100));
+  const reallocReceived=3+(h6%12);
+  const vipHandled=2+(h7%14);
+  const confirmedRate=+(0.55+(h8%40)/100).toFixed(2);
+  const serialCompliance=+(0.7+(hashStr(key+'|i')%28)/100).toFixed(2);
+  const responsiveness=Math.max(0,Math.min(100,130-avgResponseMins));
+  const score=Math.max(0,Math.min(100,Math.round(
+    approvalRate*100*0.4+
+    (1-Math.min(1,damaged/Math.max(1,requests)))*100*0.25+
+    responsiveness*0.2+
+    confirmedRate*100*0.15
+  )));
+  return {requests,approved,rejected,approvalRate,damaged,avgResponseMins,reallocSent,reallocReceived,vipHandled,confirmedRate,serialCompliance,score};
+}
+function hqPrevPeriodKey(gran,key){
+  const list=PERIODS[gran];const idx=list.findIndex(p=>p.key===key);
+  return (idx>-1&&idx<list.length-1)?list[idx+1].key:null;
+}
+function hqRankStores(periodKey){
+  const rows=STORES.map(s=>({store:s,metrics:hqMetrics(s.code,periodKey)}));
+  rows.sort((a,b)=>b.metrics.score-a.metrics.score||b.metrics.requests-a.metrics.requests);
+  rows.forEach((r,i)=>r.rank=i+1);
+  return rows;
+}
+function hqRankDelta(store,periodKey){
+  const prevKey=hqPrevPeriodKey(hqGran,periodKey);
+  if(!prevKey)return null;
+  const curRanked=hqRankStores(periodKey);
+  const prevRanked=hqRankStores(prevKey);
+  const cur=curRanked.find(r=>r.store.code===store.code);
+  const prev=prevRanked.find(r=>r.store.code===store.code);
+  if(!cur||!prev)return null;
+  return prev.rank-cur.rank; // positive = moved up
+}
+function hqDeltaBadge(delta){
+  if(delta===null)return '';
+  if(delta>0)return `<span class="pdelta up"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 4l7 10H5z"/></svg>${delta}</span>`;
+  if(delta<0)return `<span class="pdelta down"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 20 5 10h14z"/></svg>${Math.abs(delta)}</span>`;
+  return `<span class="pdelta flat">–</span>`;
+}
+function hqScoreColor(score){
+  if(score>=80)return 'var(--mint)';
+  if(score>=60)return 'var(--gold-deep)';
+  return 'var(--signal)';
+}
+function hqPopulatePeriodSelect(){
+  const sel=document.getElementById('hqPeriodValue');
+  sel.innerHTML=PERIODS[hqGran].map(p=>`<option value="${p.key}">${p.label}</option>`).join('');
+  sel.value=hqPeriod;
+}
+document.getElementById('hqGranSeg').addEventListener('click',e=>{
+  const b=e.target.closest('button');if(!b)return;
+  document.querySelectorAll('#hqGranSeg button').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on');hqGran=b.dataset.g;hqPeriod=PERIODS[hqGran][0].key;
+  hqPopulatePeriodSelect();hqRenderCurrent();
+});
+document.getElementById('hqPeriodValue').addEventListener('change',e=>{hqPeriod=e.target.value;hqRenderCurrent();});
+function hqRenderCurrent(){
+  if(hqCurrentStore)renderHqDetail(hqCurrentStore);else renderHqList();
+}
+
+function renderHqList(){
+  document.getElementById('hqListView').classList.remove('hidden');
+  document.getElementById('hqDetailView').classList.add('hidden');
+  const ranked=hqRankStores(hqPeriod);
+  const totalReq=ranked.reduce((s,r)=>s+r.metrics.requests,0);
+  const totalApproved=ranked.reduce((s,r)=>s+r.metrics.approved,0);
+  const totalDamaged=ranked.reduce((s,r)=>s+r.metrics.damaged,0);
+  const belowTarget=ranked.filter(r=>r.metrics.score<60).length;
+  document.getElementById('hqSumRequests').textContent=totalReq;
+  document.getElementById('hqSumApproval').textContent=Math.round(totalApproved/totalReq*100)+'%';
+  document.getElementById('hqSumDamaged').textContent=totalDamaged;
+  document.getElementById('hqSumBelow').textContent=belowTarget;
+
+  let rows=ranked.filter(r=>hqRegion==='all'||r.store.country===hqRegion);
+  rows=rows.filter(r=>matchesFilter(hqFilterText,[r.store.name,r.store.code,r.store.city,r.store.manager]));
+  document.getElementById('hqFilterCount').textContent=(hqFilterText||hqRegion!=='all')?`${rows.length} of ${ranked.length} match`:'';
+  document.getElementById('hqFilterClear').classList.toggle('hidden',!(hqFilterText||hqRegion!=='all'));
+  const body=document.getElementById('hqBody');
+  if(!rows.length){body.innerHTML=`<tr><td colspan="10" style="color:var(--txt-3);padding:26px 14px">No stores match your search.</td></tr>`;return;}
+  body.innerHTML=rows.map(r=>{
+    const rankCls=r.rank===1?'r1':r.rank===2?'r2':r.rank===3?'r3':'';
+    const delta=hqRankDelta(r.store,hqPeriod);
+    return `<tr>
+      <td><div class="rankbadge ${rankCls}">${r.rank}</div></td>
+      <td><b>${r.store.name}</b><div class="storerow-country">${r.store.code} · ${r.store.country}</div></td>
+      <td class="muted-c">${r.store.manager}</td>
+      <td class="mono">${r.metrics.requests}</td>
+      <td class="mono" style="color:var(--mint)">${r.metrics.approved}</td>
+      <td class="mono" style="color:var(--signal)">${r.metrics.rejected}</td>
+      <td class="mono">${Math.round(r.metrics.approvalRate*100)}%</td>
+      <td class="mono">${r.metrics.damaged}</td>
+      <td><span class="perfscore" style="color:${hqScoreColor(r.metrics.score)}">${r.metrics.score}${hqDeltaBadge(delta)}</span></td>
+      <td><button class="btn btn-ghost sm act-hq-view" data-code="${r.store.code}">View store</button></td>
+    </tr>`;
+  }).join('');
+  body.querySelectorAll('.act-hq-view').forEach(b=>b.addEventListener('click',()=>openHqDetail(b.dataset.code)));
+}
+document.getElementById('hqFilter').addEventListener('input',e=>{hqFilterText=e.target.value.trim();renderHqList();});
+document.getElementById('hqFilterClear').addEventListener('click',()=>{hqFilterText='';hqRegion='all';document.getElementById('hqFilter').value='';document.querySelectorAll('#hqRegionChips .chip-f').forEach(c=>c.classList.toggle('on',c.dataset.r==='all'));renderHqList();});
+document.getElementById('hqRegionChips').addEventListener('click',e=>{
+  const b=e.target.closest('.chip-f');if(!b)return;
+  document.querySelectorAll('#hqRegionChips .chip-f').forEach(c=>c.classList.remove('on'));
+  b.classList.add('on');hqRegion=b.dataset.r;renderHqList();
+});
+
+function openHqDetail(code){
+  hqCurrentStore=code;
+  renderHqDetail(code);
+}
+document.getElementById('hqBack').addEventListener('click',()=>{hqCurrentStore=null;renderHqList();});
+
+function renderHqDetail(code){
+  const store=STORES.find(s=>s.code===code);if(!store)return;
+  document.getElementById('hqListView').classList.add('hidden');
+  document.getElementById('hqDetailView').classList.remove('hidden');
+  const m=hqMetrics(store.code,hqPeriod);
+  const ranked=hqRankStores(hqPeriod);
+  const rankEntry=ranked.find(r=>r.store.code===code);
+  const initials=store.manager.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+
+  document.getElementById('hqProfile').innerHTML=`
+    <div class="avatar-mgr">${initials}</div>
+    <div class="pmeta">
+      <h2>${store.name}</h2>
+      <div class="role">${store.code} · ${store.country} · Opened ${store.opened}</div>
+      <div class="plist">
+        <div class="kv"><span>Store manager</span><b>${store.manager}</b></div>
+        <div class="kv"><span>Employees</span><b>${store.employees}</b></div>
+        <div class="kv"><span>Email</span><b><a href="mailto:${store.email}">${store.email}</a></b></div>
+        <div class="kv"><span>Phone</span><b><a href="tel:${store.phone.replace(/\s+/g,'')}">${store.phone}</a></b></div>
+        <div class="kv" style="grid-column:1/-1"><span>Address</span><b>${store.address}</b></div>
+      </div>
+    </div>
+    <div style="text-align:right">
+      <div class="perfscore" style="font-size:26px;color:${hqScoreColor(m.score)}">${m.score}</div>
+      <div class="muted-c" style="font-size:11.5px">Rank ${rankEntry?rankEntry.rank:'—'} of ${STORES.length}</div>
+    </div>`;
+
+  document.getElementById('hqDetailKpis').innerHTML=`
+    <div class="kpi">
+      <div class="glyph g-gold"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 11l2 2 4-4"/></svg></div>
+      <div class="lab">Requests received</div><div class="num tnum">${m.requests}</div><div class="sub">This period</div>
+    </div>
+    <div class="kpi">
+      <div class="glyph g-mint"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 6 9 17l-5-5"/></svg></div>
+      <div class="lab">Approved</div><div class="num tnum">${m.approved}</div><div class="sub">${Math.round(m.approvalRate*100)}% approval rate</div>
+    </div>
+    <div class="kpi alert">
+      <div class="glyph g-signal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 6 6 18M6 6l12 12"/></svg></div>
+      <div class="lab">Rejected</div><div class="num tnum">${m.rejected}</div><div class="sub">${Math.round((1-m.approvalRate)*100)}% of requests</div>
+    </div>
+    <div class="kpi">
+      <div class="glyph g-signal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m6 3 6-1 6 1 3 5-9 13L3 8z"/></svg></div>
+      <div class="lab">Damaged reports</div><div class="num tnum">${m.damaged}</div><div class="sub">Logged this period</div>
+    </div>
+    <div class="kpi">
+      <div class="glyph g-gold"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.2 2"/></svg></div>
+      <div class="lab">Avg. response time</div><div class="num tnum">${m.avgResponseMins}<span style="font-size:16px">m</span></div><div class="sub">From request to decision</div>
+    </div>
+    <div class="kpi">
+      <div class="glyph g-gold"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m6 3 6-1 6 1 3 5-9 13L3 8z"/></svg></div>
+      <div class="lab">VIP orders handled</div><div class="num tnum">${m.vipHandled}</div><div class="sub">Priority customers</div>
+    </div>`;
+
+  const gLabel=PERIODS[hqGran].find(p=>p.key===hqPeriod).label;
+  document.getElementById('hqTrendMeta').textContent=`Last ${Math.min(6,PERIODS[hqGran].length)} ${hqGran==='month'?'months':hqGran==='quarter'?'quarters':'years'}, ending ${gLabel}`;
+  const idx=PERIODS[hqGran].findIndex(p=>p.key===hqPeriod);
+  const trendKeys=PERIODS[hqGran].slice(idx,idx+6).reverse();
+  const trendEl=document.getElementById('hqTrendBars');trendEl.innerHTML='';
+  const trendData=trendKeys.map(p=>({label:p.label,...hqMetrics(store.code,p.key)}));
+  const maxTotal=Math.max(...trendData.map(d=>d.requests));
+  trendData.forEach((d,i)=>{
+    const col=document.createElement('div');col.className='bar-col';
+    col.innerHTML=`<span class="bar-val">${d.requests}</span>
+      <div class="bar-stack" style="height:0">
+        <div class="bar-seg" style="height:${d.rejected/d.requests*100}%;background:var(--signal)"></div>
+        <div class="bar-seg" style="height:${d.approved/d.requests*100}%;background:var(--mint)"></div>
+      </div>
+      <span class="bar-lab">${d.label.split(' ')[0]}</span>`;
+    trendEl.appendChild(col);
+    const h=d.requests/maxTotal*100;
+    setTimeout(()=>col.querySelector('.bar-stack').style.height=h+'%',60+i*70);
+  });
+
+  const rKey=store.code+'|'+hqPeriod+'|reasons';
+  const reasonSegs=[
+    {l:'Low stock',v:20+(hashStr(rKey+'1')%20),c:'#A9812E'},
+    {l:'Condition issue',v:m.damaged,c:'#96332C'},
+    {l:'Customer reserved',v:10+(hashStr(rKey+'2')%18),c:'#8A6A22'},
+    {l:'Staff incentive',v:3+(hashStr(rKey+'3')%8),c:'#C9BBA0'},
+    {l:'Other',v:2+(hashStr(rKey+'4')%6),c:'#3F6B4F'},
+  ];
+  donut('hqDonut','hqDonutLeg',reasonSegs,true);
+
+  hbars('hqRealloc',[
+    {l:'Sent out',v:m.reallocSent,c:'linear-gradient(90deg,var(--signal),#B23B33)'},
+    {l:'Received',v:m.reallocReceived,c:'linear-gradient(90deg,var(--gold),var(--gold-deep))'},
+  ]);
+  hbars('hqService',[
+    {l:'Avg. response',v:m.avgResponseMins,c:'linear-gradient(90deg,var(--gold),var(--gold-deep))'},
+    {l:'VIP handled',v:m.vipHandled,c:'linear-gradient(90deg,var(--gold),var(--gold-deep))'},
+    {l:'Serial capture',v:Math.round(m.serialCompliance*100),c:'linear-gradient(90deg,var(--gold),var(--gold-deep))'},
+  ],{max:Math.max(m.avgResponseMins,m.vipHandled,100)});
+
+  const condEl=document.getElementById('hqCondHealth');condEl.innerHTML='';
+  const confirmedPct=Math.round(m.confirmedRate*100);
+  [{d:'Confirmed condition',s:confirmedPct},{d:'Unconfirmed on receipt',s:100-confirmedPct}].forEach((r,i)=>{
+    const low=r.d.startsWith('Unconfirmed');
+    const it=document.createElement('div');it.className='it';
+    it.innerHTML=`<div class="top"><span class="d">${r.d}</span><span class="s">${r.s}%</span></div><div class="track"><div class="fill" style="background:${low?'var(--signal)':'linear-gradient(90deg,var(--gold),var(--gold-deep))'}"></div></div>`;
+    condEl.appendChild(it);
+    setTimeout(()=>it.querySelector('.fill').style.width=r.s+'%',80+i*70);
+  });
+}
+
+/* ================= GLOBAL SEARCH ================= */
+function buildSearchIndex(){
+  const idx=[];
+  QUEUE.forEach(q=>idx.push({order:q.order,customer:q.customer,item:q.item,view:'queue',tag:'Queue'}));
+  ORDER_TRACKER.forEach(o=>idx.push({order:o.order,customer:o.customer,item:o.item,view:'tracker',tag:'Tracker'}));
+  PAYMENTS.forEach(p=>idx.push({order:p.order,customer:p.customer,item:p.item,view:'payment',tag:'Payment'}));
+  DISPATCH.forEach(d=>idx.push({order:d.order,customer:d.customer,item:d.item,view:'dispatch',tag:'Dispatch'}));
+  DISPATCH_PACKED.forEach(d=>idx.push({order:d.order,customer:d.customer,item:d.item,view:'dispatch',tag:'Dispatch'}));
+  TRANSFERS.forEach(t=>idx.push({order:t.order,customer:t.customer,item:t.item,view:'transfers',tag:'Transfers'}));
+  WATCHES.forEach(w=>idx.push({order:w.serial,customer:w.ref,item:w.brand+' '+w.model,view:'condition',tag:'Condition'}));
+  return idx;
+}
+function closeSearchPanel(){document.getElementById('searchPanel').classList.remove('on');}
+function renderSearchResults(text){
+  const panel=document.getElementById('globalSearchResults');
+  if(!text){panel.innerHTML='<div class="empty">Start typing an order number, customer name or piece.</div>';return;}
+  const q=text.toLowerCase();
+  const seen=new Set();
+  const results=buildSearchIndex().filter(r=>{
+    const key=r.order+'·'+r.view;
+    if(seen.has(key))return false;
+    const hit=(r.order||'').toLowerCase().includes(q)||(r.customer||'').toLowerCase().includes(q)||(r.item||'').toLowerCase().includes(q);
+    if(hit)seen.add(key);
+    return hit;
+  }).slice(0,20);
+  if(!results.length){panel.innerHTML=`<div class="empty">No orders match "${text}".</div>`;return;}
+  panel.innerHTML=results.map(r=>`<div class="sr" data-view="${r.view}" data-term="${r.order}">
+      <div class="sr-main"><b>${r.order}</b><span>${r.customer} · ${r.item}</span></div>
+      <span class="sr-tag">${r.tag}</span>
+    </div>`).join('');
+  panel.querySelectorAll('.sr').forEach(el=>el.addEventListener('click',()=>{
+    const view=el.dataset.view,term=el.dataset.term;
+    go(view);
+    if(view==='queue'){
+      document.querySelectorAll('#queueTabs .tab').forEach(t=>t.classList.remove('on'));
+      document.querySelector('#queueTabs [data-tab=all]').classList.add('on');currentQTab='all';
+      queueFilterText=term;document.getElementById('queueFilter').value=term;renderQueue();
+    }else if(view==='tracker'){
+      trackerFilterText=term;document.getElementById('trackerFilter').value=term;renderTracker();
+    }else if(view==='payment'){
+      paymentFilterText=term;document.getElementById('paymentFilter').value=term;renderPayment();
+    }else if(view==='condition'){
+      conditionChip='all';document.querySelectorAll('#conditionChips .chip-f').forEach(c=>c.classList.toggle('on',c.dataset.c==='all'));
+      conditionFilterText=term;document.getElementById('conditionFilter').value=term;renderConditionTable();
+    }
+    closeSearchPanel();
+  }));
+}
+document.getElementById('searchBtn').addEventListener('click',e=>{
+  e.stopPropagation();
+  const panel=document.getElementById('searchPanel');
+  const willOpen=!panel.classList.contains('on');
+  panel.classList.toggle('on');
+  if(willOpen){document.getElementById('globalSearchInput').focus();renderSearchResults(document.getElementById('globalSearchInput').value.trim());}
+});
+document.getElementById('globalSearchInput').addEventListener('input',e=>renderSearchResults(e.target.value.trim()));
+document.getElementById('searchPanel').addEventListener('click',e=>e.stopPropagation());
+document.addEventListener('click',()=>closeSearchPanel());
+
+/* ================= NAV TOGGLE ================= */
+(function(){
+  const app=document.querySelector('.app');
+  const btn=document.getElementById('navToggle');
+  const collapsed=sessionStorage.getItem('wosNavCollapsed')==='1';
+  if(collapsed)app.classList.add('nav-collapsed');
+  btn.addEventListener('click',function(){
+    const isNow=app.classList.toggle('nav-collapsed');
+    sessionStorage.setItem('wosNavCollapsed',isNow?'1':'0');
+  });
+})();
+
+document.getElementById('beaconBtn').addEventListener('click',()=>go('overview'));
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeModals();closeSearchPanel();}});
+
+/* ================= INIT ================= */
+applyMarket('UK');
+renderOverview();renderQueue();renderTracker();renderActivity();renderDispatch();renderTransfers();renderPayment();renderConditionTable();renderConditionLog();
+hqPopulatePeriodSelect();renderHqList();
+animateCounts();
+</script>
+</body>
+</html>
